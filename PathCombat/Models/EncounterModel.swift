@@ -1,0 +1,36 @@
+//
+//  Encounter.swift
+//  PathCombat
+//
+//  Created by Federico Brandani on 19/09/2026.
+//
+
+import Foundation
+import SwiftData
+
+@Model
+final class Encounter {
+    var id: UUID
+    var date: Date
+    var name: String
+    var completed: Bool
+    var combatEntities: [CombatEntity]
+    
+    init(name: String, id: UUID?, date: Date?, completed: Bool?, combatEntities: [CombatEntity]?) {
+        self.id = id ?? UUID()
+        self.name = name
+        self.date = date ?? Date()
+        self.completed = completed ?? false
+        self.combatEntities = combatEntities ?? []
+    }
+    
+    func formatDate() -> String {
+        self.date.formatted()
+    }
+    
+    func calculateDifficulty() -> Difficulty {
+        Difficulty.Moderate
+    }
+    
+    
+}

@@ -1,0 +1,539 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 110;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		D005835A305E892C0076BE12 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D0058342305E892A0076BE12 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D0058349305E892A0076BE12;
+			remoteInfo = PathCombat;
+		};
+		D0058364305E892C0076BE12 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D0058342305E892A0076BE12 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D0058349305E892A0076BE12;
+			remoteInfo = PathCombat;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D005834A305E892A0076BE12 /* PathCombat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PathCombat.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0058359305E892C0076BE12 /* PathCombatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PathCombatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D0058363305E892C0076BE12 /* PathCombatUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PathCombatUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D005834C305E892A0076BE12 /* PathCombat */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PathCombat;
+			sourceTree = "<group>";
+		};
+		D005835C305E892C0076BE12 /* PathCombatTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PathCombatTests;
+			sourceTree = "<group>";
+		};
+		D0058366305E892C0076BE12 /* PathCombatUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PathCombatUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D0058347305E892A0076BE12 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		D0058356305E892C0076BE12 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		D0058360305E892C0076BE12 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D0058341305E892A0076BE12 = {
+			isa = PBXGroup;
+			children = (
+				D005834C305E892A0076BE12 /* PathCombat */,
+				D005835C305E892C0076BE12 /* PathCombatTests */,
+				D0058366305E892C0076BE12 /* PathCombatUITests */,
+				D005834B305E892A0076BE12 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D005834B305E892A0076BE12 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D005834A305E892A0076BE12 /* PathCombat.app */,
+				D0058359305E892C0076BE12 /* PathCombatTests.xctest */,
+				D0058363305E892C0076BE12 /* PathCombatUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D0058349305E892A0076BE12 /* PathCombat */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D005836B305E892C0076BE12 /* Build configuration list for PBXNativeTarget "PathCombat" */;
+			buildPhases = (
+				D0058346305E892A0076BE12 /* Sources */,
+				D0058347305E892A0076BE12 /* Frameworks */,
+				D0058348305E892A0076BE12 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				D005834C305E892A0076BE12 /* PathCombat */,
+			);
+			name = PathCombat;
+			productName = PathCombat;
+			productReference = D005834A305E892A0076BE12 /* PathCombat.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D0058358305E892C0076BE12 /* PathCombatTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D005836E305E892C0076BE12 /* Build configuration list for PBXNativeTarget "PathCombatTests" */;
+			buildPhases = (
+				D0058355305E892C0076BE12 /* Sources */,
+				D0058356305E892C0076BE12 /* Frameworks */,
+				D0058357305E892C0076BE12 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D005835B305E892C0076BE12 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D005835C305E892C0076BE12 /* PathCombatTests */,
+			);
+			name = PathCombatTests;
+			productName = PathCombatTests;
+			productReference = D0058359305E892C0076BE12 /* PathCombatTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D0058362305E892C0076BE12 /* PathCombatUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D0058371305E892C0076BE12 /* Build configuration list for PBXNativeTarget "PathCombatUITests" */;
+			buildPhases = (
+				D005835F305E892C0076BE12 /* Sources */,
+				D0058360305E892C0076BE12 /* Frameworks */,
+				D0058361305E892C0076BE12 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D0058365305E892C0076BE12 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D0058366305E892C0076BE12 /* PathCombatUITests */,
+			);
+			name = PathCombatUITests;
+			productName = PathCombatUITests;
+			productReference = D0058363305E892C0076BE12 /* PathCombatUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D0058342305E892A0076BE12 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					D0058349305E892A0076BE12 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					D0058358305E892C0076BE12 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = D0058349305E892A0076BE12;
+					};
+					D0058362305E892C0076BE12 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = D0058349305E892A0076BE12;
+					};
+				};
+			};
+			buildConfigurationList = D0058345305E892A0076BE12 /* Build configuration list for PBXProject "PathCombat" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D0058341305E892A0076BE12;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D005834B305E892A0076BE12 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D0058349305E892A0076BE12 /* PathCombat */,
+				D0058358305E892C0076BE12 /* PathCombatTests */,
+				D0058362305E892C0076BE12 /* PathCombatUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0058348305E892A0076BE12 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		D0058357305E892C0076BE12 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		D0058361305E892C0076BE12 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D0058346305E892A0076BE12 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		D0058355305E892C0076BE12 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		D005835F305E892C0076BE12 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D005835B305E892C0076BE12 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D0058349305E892A0076BE12 /* PathCombat */;
+			targetProxy = D005835A305E892C0076BE12 /* PBXContainerItemProxy */;
+		};
+		D0058365305E892C0076BE12 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D0058349305E892A0076BE12 /* PathCombat */;
+			targetProxy = D0058364305E892C0076BE12 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D0058369305E892C0076BE12 /* Debug configuration for PBXProject "PathCombat" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D005836A305E892C0076BE12 /* Release configuration for PBXProject "PathCombat" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		D005836C305E892C0076BE12 /* Debug configuration for PBXNativeTarget "PathCombat" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eshvasoft.PathCombat;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D005836D305E892C0076BE12 /* Release configuration for PBXNativeTarget "PathCombat" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eshvasoft.PathCombat;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D005836F305E892C0076BE12 /* Debug configuration for PBXNativeTarget "PathCombatTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eshvasoft.PathCombatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PathCombat.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PathCombat";
+			};
+			name = Debug;
+		};
+		D0058370305E892C0076BE12 /* Release configuration for PBXNativeTarget "PathCombatTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eshvasoft.PathCombatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PathCombat.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PathCombat";
+			};
+			name = Release;
+		};
+		D0058372305E892C0076BE12 /* Debug configuration for PBXNativeTarget "PathCombatUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eshvasoft.PathCombatUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = PathCombat;
+			};
+			name = Debug;
+		};
+		D0058373305E892C0076BE12 /* Release configuration for PBXNativeTarget "PathCombatUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = net.eshvasoft.PathCombatUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = PathCombat;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D0058345305E892A0076BE12 /* Build configuration list for PBXProject "PathCombat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0058369305E892C0076BE12 /* Debug configuration for PBXProject "PathCombat" */,
+				D005836A305E892C0076BE12 /* Release configuration for PBXProject "PathCombat" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D005836B305E892C0076BE12 /* Build configuration list for PBXNativeTarget "PathCombat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D005836C305E892C0076BE12 /* Debug configuration for PBXNativeTarget "PathCombat" */,
+				D005836D305E892C0076BE12 /* Release configuration for PBXNativeTarget "PathCombat" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D005836E305E892C0076BE12 /* Build configuration list for PBXNativeTarget "PathCombatTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D005836F305E892C0076BE12 /* Debug configuration for PBXNativeTarget "PathCombatTests" */,
+				D0058370305E892C0076BE12 /* Release configuration for PBXNativeTarget "PathCombatTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D0058371305E892C0076BE12 /* Build configuration list for PBXNativeTarget "PathCombatUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0058372305E892C0076BE12 /* Debug configuration for PBXNativeTarget "PathCombatUITests" */,
+				D0058373305E892C0076BE12 /* Release configuration for PBXNativeTarget "PathCombatUITests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D0058342305E892A0076BE12 /* Project object */;
+	validationLevel = 1;
+}
