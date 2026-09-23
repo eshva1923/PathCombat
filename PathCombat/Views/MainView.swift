@@ -12,30 +12,29 @@ struct MainView: View {
     @State private var selectedSection: AppSection = .combatTracker
 
     var body: some View {
-        VStack(spacing: 0) {
-            Picker("Section", selection: $selectedSection) {
-                ForEach(AppSection.allCases) { section in
-                    Label(section.rawValue, systemImage: section.systemImage)
-                        .tag(section)
-                }
+        Group {
+            switch selectedSection {
+            case .combatTracker:
+                CombatTrackerView()
+            case .entitiesLibrary:
+                EntitiesLibraryView()
+            case .rulesAndConditions:
+                RulesAndConditionsView()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .padding()
-
-            Divider()
-
-            Group {
-                switch selectedSection {
-                case .combatTracker:
-                    CombatTrackerView()
-                case .entitiesLibrary:
-                    EntitiesLibraryView()
-                case .rulesAndConditions:
-                    RulesAndConditionsView()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("Section", selection: $selectedSection) {
+                    ForEach(AppSection.allCases) { section in
+                        Label(section.rawValue, systemImage: section.systemImage)
+                            .tag(section)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 420)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

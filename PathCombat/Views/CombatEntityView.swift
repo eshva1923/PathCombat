@@ -11,13 +11,18 @@ import SwiftData
 struct CombatEntityView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var combatEntity: CombatEntity
-    
+    @State private var viewModel: CombatEntityViewModel
+
     let formatter: NumberFormatter = {
             let formatter = NumberFormatter()
             formatter.numberStyle = .decimal
             return formatter
     }()
-    
+
+    init(combatEntity: CombatEntity) {
+        self.combatEntity = combatEntity
+        self._viewModel = State(initialValue: CombatEntityViewModel(combatEntity: combatEntity))
+    }
     
     var body: some View {
         Group {
@@ -70,7 +75,7 @@ struct CombatEntityView: View {
                 Image(systemName: "figure.run")
             }.fontWeight(.bold)
             Button {
-                rollIni()
+                viewModel.rollInitiative()
             } label: {
                 HStack {
                     Text("Roll Initiative")
@@ -99,11 +104,6 @@ struct CombatEntityView: View {
                 }.fontWeight(.medium)
             }
         
-    }
-    
-    func rollIni() {
-        let initiative = DieType.d20.roll() + combatEntity.iniMod
-        combatEntity.currentIni = initiative
     }
     
     var StatRow: some View {

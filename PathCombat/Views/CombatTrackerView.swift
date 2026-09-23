@@ -11,8 +11,10 @@ import SwiftData
 struct CombatTrackerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var encounters: [Encounter]
+    @State private var viewModel = CombatTrackerViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var hoveredEncounterID: UUID?
+    @State private var selectedEncounterID: UUID?
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -38,7 +40,12 @@ struct CombatTrackerView: View {
             )
             .toolbar(removing: .sidebarToggle)
         } detail: {
-            Text("Select an encounter")
+            if let selectedEncounterID,
+               let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
+                EncounterView(encounter: encounter)
+            } else {
+                Text("Select an encounter")
+            }
         }
         .navigationSplitViewStyle(.prominentDetail)
         .onChange(of: columnVisibility) { _, newValue in
@@ -52,16 +59,19 @@ struct CombatTrackerView: View {
 extension CombatTrackerView {
     private func encounterRow(_ encounter: Encounter) -> some View {
         HStack {
-            NavigationLink {
-                EncounterView(encounter: encounter)
+            Button {
+                selectedEncounterID = encounter.id
             } label: {
                 Text(encounter.name)
                     .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
-            Spacer()
             Button {
-                deleteEncounter(encounter)
+                viewModel.deleteEncounter(encounter, using: modelContext)
+                if selectedEncounterID == encounter.id {
+                    selectedEncounterID = nil
+                }
             } label: {
                 Image(systemName: "trash")
             }
@@ -70,14 +80,20 @@ extension CombatTrackerView {
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
-        .background(hoveredEncounterID == encounter.id ? Color.secondary.opacity(0.15) : Color.clear)
+        .background(
+            selectedEncounterID == encounter.id
+                ? Color.accentColor.opacity(0.25)
+                : (hoveredEncounterID == encounter.id ? Color.secondary.opacity(0.15) : Color.clear)
+        )
         .onHover { hovering in
             hoveredEncounterID = hovering ? encounter.id : nil
         }
     }
 
     var addEncounterRow: some View {
-        Button(action: addEncounter) {
+        Button {
+            viewModel.addEncounter(using: modelContext)
+        } label: {
             HStack {
                 Spacer()
                 Image(systemName: "plus")
@@ -87,24 +103,6 @@ extension CombatTrackerView {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private func addEncounter() {
-        withAnimation {
-            let newItem = Encounter(
-                name: "New Encounter",
-                id: nil,
-                date: nil,
-                completed: nil,
-                combatEntities: nil)
-            modelContext.insert(newItem)
-        }
-    }
-    
-    private func deleteEncounter(_ encounter: Encounter) {
-        withAnimation {
-            modelContext.delete(encounter)
-        }
     }
 }
 

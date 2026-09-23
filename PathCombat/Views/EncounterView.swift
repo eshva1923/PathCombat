@@ -4,7 +4,26 @@ import SwiftData
 struct EncounterView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var encounter: Encounter
-    
+    @State private var viewModel: EncounterViewModel
+
+    init(encounter: Encounter) {
+        self.encounter = encounter
+        self._viewModel = State(initialValue: EncounterViewModel(encounter: encounter))
+    }
+
+    var sortedByInitiative: [CombatEntity] {
+        encounter.combatEntities.sorted { lhs, rhs in
+            if lhs.currentIni != rhs.currentIni {
+                return lhs.currentIni > rhs.currentIni
+            }
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+    }
+
+    var dateAdded: String {
+        encounter.date.formatted(date: .long, time: .shortened)
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             HSplitView {
@@ -19,7 +38,7 @@ struct EncounterView: View {
                                     CombatEntityView(combatEntity: entity)
                                     HStack {
                                         Button {
-                                            deleteEntity(entity)
+                                            viewModel.deleteEntity(entity)
                                         } label: {
                                             Image(systemName: "trash")
                                         }
@@ -58,15 +77,6 @@ struct EncounterView: View {
 }
 
 extension EncounterView {
-    var sortedByInitiative: [CombatEntity] {
-        encounter.combatEntities.sorted { lhs, rhs in
-            if lhs.currentIni != rhs.currentIni {
-                return lhs.currentIni > rhs.currentIni
-            }
-            return lhs.id.uuidString < rhs.id.uuidString
-        }
-    }
-
     func initiativeTracker(proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
@@ -76,7 +86,7 @@ extension EncounterView {
 
                 Spacer()
                 Button {
-                    advanceInitiative()
+                    viewModel.advanceInitiative()
                 } label: {
                     Image(systemName: "play.fill")
                 }
@@ -127,7 +137,7 @@ extension EncounterView {
 
     var addEntityRow: some View {
         Button {
-            addNewEntity()
+            viewModel.addNewEntity()
         } label: {
             HStack {
                 Spacer()
@@ -156,47 +166,6 @@ extension EncounterView {
             }
             .background(encounter.completed ? .red : .clear)
 
-        }
-    }
-    var dateAdded: String {
-        encounter.date.formatted(date: .long, time: .shortened)
-    }
-    
-    private func addNewEntity() {
-        withAnimation {
-            encounter.combatEntities.append(CombatEntity.new())
-        }
-    }
-    
-    private func deleteEntity(_ entity: CombatEntity) {
-        withAnimation {
-            encounter.combatEntities.removeAll(where: {$0 == entity})
-        }
-    }
-    
-    private func advanceInitiative() {
-        let order = sortedByInitiative
-        guard !order.isEmpty else { return }
-
-        guard encounter.currentInitiative != 0,
-              let actingID = encounter.actingEntity,
-              let currentIndex = order.firstIndex(where: { $0.id == actingID }) else {
-            let first = order.first!
-            encounter.currentInitiative = first.currentIni
-            encounter.actingEntity = first.id
-            return
-        }
-
-        let nextIndex = currentIndex + 1
-        if nextIndex < order.count {
-            let next = order[nextIndex]
-            encounter.currentInitiative = next.currentIni
-            encounter.actingEntity = next.id
-        } else {
-            let first = order.first!
-            encounter.currentInitiative = first.currentIni
-            encounter.actingEntity = first.id
-            encounter.elapsedCombatRounds += 1
         }
     }
 }
