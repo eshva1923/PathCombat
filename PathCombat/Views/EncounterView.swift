@@ -37,6 +37,7 @@ struct EncounterView: View {
                         }
                         .padding()
                     }
+                    .frame(minHeight: 60)
                     Divider()
                     HStack {
                         Spacer()
@@ -79,6 +80,7 @@ extension EncounterView {
                 } label: {
                     Image(systemName: "play.fill")
                 }
+                .disabled(encounter.combatEntities.isEmpty)
             }.padding()
             if encounter.combatEntities.isEmpty {
                 Text("No entities added")
@@ -124,18 +126,19 @@ extension EncounterView {
     }
 
     var addEntityRow: some View {
-        HStack {
-            Spacer()
-            Button {
-                addNewEntity()
-            } label: {
+        Button {
+            addNewEntity()
+        } label: {
+            HStack {
+                Spacer()
                 Image(systemName: "plus.app")
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 5)
-                
+                Spacer()
             }
-            Spacer()
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
     }
     
     

@@ -27,7 +27,7 @@ struct CombatEntityView: View {
                 }.font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
-                LabelTag(text: "Level \(combatEntity.level)", color: .brown)
+                levelTag
             }
             .padding(.vertical)
             HStack{
@@ -43,6 +43,19 @@ struct CombatEntityView: View {
                 }.padding(.horizontal, 10)   
         }
         .padding(.horizontal)
+    }
+    
+    var levelTag: some View {
+        HStack(spacing: 4) {
+            Text("Level")
+            TextField(value: $combatEntity.level, formatter: formatter) {
+                EmptyView()
+            }
+            .frame(width: 30)
+        }
+        .padding(3)
+        .background(Color.brown)
+        .cornerRadius(5)
     }
             
             
@@ -98,25 +111,25 @@ struct CombatEntityView: View {
             HStack {
             LabelStat(
                 text: "Fortitude",
-                value: combatEntity.fortST,
+                value: $combatEntity.fortST,
                 imageName: "figure.boxing",
                 hoverEffect: true,
                 hoverColor: nil)
             LabelStat(
                 text: "Reflexes",
-                value: combatEntity.refST,
+                value: $combatEntity.refST,
                 imageName: "figure.fall",
                 hoverEffect: true,
                 hoverColor: nil)
             LabelStat(
                 text: "Will",
-                value: combatEntity.willST,
+                value: $combatEntity.willST,
                 imageName: "brain.fill",
                 hoverEffect: true,
                 hoverColor: nil)
             LabelStat(
                 text: "Perception",
-                value: combatEntity.iniMod,
+                value: $combatEntity.iniMod,
                 imageName: "bolt",
                 hoverEffect: true,
                 hoverColor: Color.orange)
@@ -125,13 +138,13 @@ struct CombatEntityView: View {
             HStack {
                 LabelStat(
                     text: "AC",
-                    value: combatEntity.ac,
+                    value: $combatEntity.ac,
                     imageName: "shield.lefthalf.filled",
                     hoverEffect: false,
                     hoverColor: nil)
                 LabelStat(
                     text: "DC",
-                    value: combatEntity.dc,
+                    value: $combatEntity.dc,
                     imageName: "dot.scope",
                     hoverEffect: false,
                     hoverColor: nil)

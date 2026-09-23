@@ -27,3 +27,19 @@ enum DieType: Int {
         Int.random(in: 1...self.rawValue)
     }
 }
+
+enum AppSection: String, CaseIterable, Identifiable {
+    case combatTracker = "Combat Tracker"
+    case entitiesLibrary = "Entities Library"
+    case rulesAndConditions = "Rules and Conditions"
+
+    var id: Self { self }
+
+    var systemImage: String {
+        switch self {
+        case .combatTracker: return "shield.lefthalf.filled"
+        case .entitiesLibrary: return "person.3.fill"
+        case .rulesAndConditions: return "book.closed.fill"
+        }
+    }
+}

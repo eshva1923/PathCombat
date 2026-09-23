@@ -20,19 +20,28 @@ struct LabelTag: View {
 
 struct LabelStat: View {
     let text: String
-    let value: Int
+    @Binding var value: Int
     let imageName: String
     let hoverEffect: Bool
     let hoverColor: Color?
 
     @State var backgroundColor = Color.clear
-    
+
+    static let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
+
     var body: some View {
         Label {
             HStack {
-                Text("\(value)")
-                    .font(.title3)
-                    .fontWeight(.bold)
+                TextField(value: $value, formatter: Self.formatter) {
+                    EmptyView()
+                }
+                .font(.title3)
+                .fontWeight(.bold)
+                .frame(width: 40)
                 Text(text)
             }
         } icon: {
