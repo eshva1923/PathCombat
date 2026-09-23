@@ -23,19 +23,39 @@ struct MainView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle(selectedSection.rawValue)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Picker("Section", selection: $selectedSection) {
+                HStack(spacing: 4) {
                     ForEach(AppSection.allCases) { section in
-                        Label(section.rawValue, systemImage: section.systemImage)
-                            .tag(section)
+                        sectionButton(section)
                     }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 420)
             }
         }
+    }
+
+    private func sectionButton(_ section: AppSection) -> some View {
+        Button {
+            selectedSection = section
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 15))
+                Text(section.rawValue)
+                    .font(.caption2)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .frame(minWidth: 90)
+            .background(
+                selectedSection == section
+                    ? Color.accentColor.opacity(0.25)
+                    : Color.clear
+            )
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
     }
 }
 

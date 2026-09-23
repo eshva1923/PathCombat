@@ -6,17 +6,129 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct EntitiesLibraryView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var entities: [CombatEntity]
+    @Query private var encounters: [Encounter]
+    @State private var viewModel = EntitiesLibraryViewModel()
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var hoveredEntityID: UUID?
+    @State private var selectedEntityID: UUID?
+
+    private enum Constants {
+        static let minSplitViewWidth = 180.0
+        static let idealSplitViewWidth = 200.0
+        static let maxSplitViewWidth = 220.0
+    }
+
     var body: some View {
-        ContentUnavailableView(
-            "Entities Library",
-            systemImage: AppSection.entitiesLibrary.systemImage,
-            description: Text("Coming soon.")
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            ScrollView(.vertical) {
+                VStack(spacing: 0) {
+                    ForEach(entities) { entity in
+                        entityRow(entity)
+                        Divider()
+                    }
+                    addEntityRow
+                }
+            }
+            .navigationSplitViewColumnWidth(
+                min: Constants.minSplitViewWidth,
+                ideal: Constants.idealSplitViewWidth,
+                max: Constants.maxSplitViewWidth
+            )
+            .toolbar(removing: .sidebarToggle)
+        } detail: {
+            if let selectedEntityID,
+               let entity = entities.first(where: { $0.id == selectedEntityID }) {
+                ScrollView {
+                    CombatEntityView(combatEntity: entity, isTemplate: true)
+                        .padding(.top)
+                        .id(entity.id)
+                }
+            } else {
+                Text("Select an entity")
+            }
+        }
+        .navigationSplitViewStyle(.prominentDetail)
+        .onChange(of: columnVisibility) { _, newValue in
+            if newValue != .all {
+                columnVisibility = .all
+            }
+        }
+    }
+}
+
+extension EntitiesLibraryView {
+    private func entityRow(_ entity: CombatEntity) -> some View {
+        HStack {
+            Button {
+                selectedEntityID = entity.id
+            } label: {
+                Text(entity.name)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            Button {
+                viewModel.deleteEntity(entity, using: modelContext)
+                if selectedEntityID == entity.id {
+                    selectedEntityID = nil
+                }
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.plain)
+            .disabled(isEntityInUse(entity))
+            .opacity(hoveredEntityID == entity.id ? 1 : 0)
+            .help(isEntityInUse(entity) ? "This entity is used in an encounter and can't be deleted" : "Delete entity")
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(
+            selectedEntityID == entity.id
+                ? Color.accentColor.opacity(0.25)
+                : (hoveredEntityID == entity.id ? Color.secondary.opacity(0.15) : Color.clear)
         )
+        .onHover { hovering in
+            hoveredEntityID = hovering ? entity.id : nil
+        }
+    }
+
+    var addEntityRow: some View {
+        Button {
+            viewModel.addEntity(using: modelContext)
+        } label: {
+            HStack {
+                Spacer()
+                Image(systemName: "plus")
+                Spacer()
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func isEntityInUse(_ entity: CombatEntity) -> Bool {
+        encounters.contains { $0.combatEntities.contains { $0.id == entity.id } }
     }
 }
 
 #Preview {
-    EntitiesLibraryView()
+    let container = try! ModelContainer(
+        for: Encounter.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    container.mainContext.insert(CombatEntity(
+        name: "Eaudrick Vallemar", id: nil, tags: ["Human", "Boss"], level: 8, iniMod: 15,
+        currentIni: nil, totalHP: 200, currentHP: nil, currentConditions: nil,
+        ac: 25, fortST: 12, refST: 8, willST: 21, dc: 21))
+    container.mainContext.insert(CombatEntity(
+        name: "Goblin Scout", id: nil, tags: ["Goblin"], level: 1, iniMod: 4,
+        currentIni: nil, totalHP: 12, currentHP: nil, currentConditions: nil,
+        ac: 14, fortST: 2, refST: 4, willST: 1, dc: 12))
+    return EntitiesLibraryView()
+        .modelContainer(container)
 }

@@ -35,6 +35,12 @@ final class EncounterViewModel {
         }
     }
 
+    func addExistingEntity(_ entity: CombatEntity) {
+        withAnimation {
+            encounter.combatEntities.append(entity)
+        }
+    }
+
     func deleteEntity(_ entity: CombatEntity) {
         withAnimation {
             encounter.combatEntities.removeAll(where: { $0 == entity })

@@ -5,6 +5,7 @@ struct EncounterView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var encounter: Encounter
     @State private var viewModel: EncounterViewModel
+    @State private var isShowingEntityPicker = false
 
     init(encounter: Encounter) {
         self.encounter = encounter
@@ -73,6 +74,11 @@ struct EncounterView: View {
             }
             .navigationTitle(encounter.name)
         }
+        .sheet(isPresented: $isShowingEntityPicker) {
+            EntityPickerSheet(excludedEntityIDs: Set(encounter.combatEntities.map(\.id))) { entity in
+                viewModel.addExistingEntity(entity)
+            }
+        }
     }
 }
 
@@ -136,19 +142,35 @@ extension EncounterView {
     }
 
     var addEntityRow: some View {
-        Button {
-            viewModel.addNewEntity()
-        } label: {
-            HStack {
-                Spacer()
-                Image(systemName: "plus.app")
-                Spacer()
+        HStack(spacing: 0) {
+            Button {
+                viewModel.addNewEntity()
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "plus.app")
+                    Text("Create a new entity")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            Divider()
+            Button {
+                isShowingEntityPicker = true
+            } label: {
+                VStack(spacing: 4) {
+                    Image(systemName: "plus.app")
+                    Text("Load entity")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
     }
     
     

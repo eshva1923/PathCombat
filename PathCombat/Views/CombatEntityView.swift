@@ -12,6 +12,8 @@ struct CombatEntityView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var combatEntity: CombatEntity
     @State private var viewModel: CombatEntityViewModel
+    @State private var tagsText: String
+    let isTemplate: Bool
 
     let formatter: NumberFormatter = {
             let formatter = NumberFormatter()
@@ -19,9 +21,11 @@ struct CombatEntityView: View {
             return formatter
     }()
 
-    init(combatEntity: CombatEntity) {
+    init(combatEntity: CombatEntity, isTemplate: Bool = false) {
         self.combatEntity = combatEntity
+        self.isTemplate = isTemplate
         self._viewModel = State(initialValue: CombatEntityViewModel(combatEntity: combatEntity))
+        self._tagsText = State(initialValue: combatEntity.tags.joined(separator: ", "))
     }
     
     var body: some View {
@@ -35,14 +39,20 @@ struct CombatEntityView: View {
                 levelTag
             }
             .padding(.vertical)
-            HStack{
-                ForEach (combatEntity.tags, id: \.self) {tag in
-                    LabelTag(text: tag, color: .accentColor)
+            if isTemplate {
+                tagsField
+            } else {
+                HStack{
+                    ForEach (combatEntity.tags, id: \.self) {tag in
+                        LabelTag(text: tag, color: .accentColor)
+                    }
                 }
             }
             StatRow
                 HStack {
-                    initiativeSection
+                    if !isTemplate {
+                        initiativeSection
+                    }
                     hpSection
                     
                 }.padding(.horizontal, 10)   
@@ -61,6 +71,20 @@ struct CombatEntityView: View {
         .padding(3)
         .background(Color.brown)
         .cornerRadius(5)
+    }
+
+    var tagsField: some View {
+        HStack {
+            Image(systemName: "tag")
+            TextField("Tags (comma separated)", text: $tagsText)
+                .onChange(of: tagsText) { _, newValue in
+                    combatEntity.tags = newValue
+                        .split(separator: ",")
+                        .map { $0.trimmingCharacters(in: .whitespaces) }
+                        .filter { !$0.isEmpty }
+                }
+        }
+        .padding(.horizontal, 10)
     }
             
             
@@ -94,14 +118,16 @@ struct CombatEntityView: View {
                           formatter: formatter) {
                     Image(systemName: "heart.fill")
                 }.fontWeight(.bold)
-                Spacer()
-                Image(systemName: "heart")
-                Text("curr HP")
-                    .fontWeight(.medium)
-                TextField(value: $combatEntity.currentHP,
-                          formatter: formatter) {
-                    Image(systemName: "heart.fill")
-                }.fontWeight(.medium)
+                if !isTemplate {
+                    Spacer()
+                    Image(systemName: "heart")
+                    Text("curr HP")
+                        .fontWeight(.medium)
+                    TextField(value: $combatEntity.currentHP,
+                              formatter: formatter) {
+                        Image(systemName: "heart.fill")
+                    }.fontWeight(.medium)
+                }
             }
         
     }
