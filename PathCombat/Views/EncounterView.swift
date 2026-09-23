@@ -6,38 +6,123 @@ struct EncounterView: View {
     @Bindable var encounter: Encounter
     
     var body: some View {
-        Form {
-            Section(header: Text("Info")) {
-                topRow
-                Divider().padding()
-                ForEach(encounter.combatEntities) { entity in
-                        CombatEntityView(combatEntity: entity)
-                    HStack {
-                        Button {
-                            deleteEntity(entity)
-                        } label: {
-                            Image(systemName: "trash")
+        ScrollViewReader { proxy in
+            HSplitView {
+                VStack(spacing: 0) {
+                    topRow
+                        .padding()
+                    Divider()
+                    ScrollView {
+                        VStack {
+                            ForEach(encounter.combatEntities) { entity in
+                                VStack {
+                                    CombatEntityView(combatEntity: entity)
+                                    HStack {
+                                        Button {
+                                            deleteEntity(entity)
+                                        } label: {
+                                            Image(systemName: "trash")
+                                        }
+                                    }
+                                }
+                                .padding(4)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.secondary, lineWidth: entity.id == encounter.actingEntity ? 2 : 0)
+                                )
+                                .id(entity.id)
+                                Divider().padding()
+                            }
+                            addEntityRow
                         }
+                        .padding()
                     }
-                        Divider().padding()
+                    Divider()
+                    HStack {
+                        Spacer()
+                        Text("Added on:")
+                            .italic()
+                        Text(dateAdded)
+                            .italic()
+                    }
+                    .padding()
                 }
-                addEntityRow
-                Divider().padding()
-                HStack {
-                    Spacer()
-                    Text("Added on:")
-                        .italic()
-                    Text(dateAdded)
-                        .italic()
-                }
+                .frame(minWidth: 300)
+                initiativeTracker(proxy: proxy)
+                    .frame(minWidth: 160, idealWidth: 160, maxWidth: 400)
             }
+            .navigationTitle(encounter.name)
         }
-        .padding()
-        .navigationTitle(encounter.name)
     }
 }
 
 extension EncounterView {
+    var sortedByInitiative: [CombatEntity] {
+        encounter.combatEntities.sorted { lhs, rhs in
+            if lhs.currentIni != rhs.currentIni {
+                return lhs.currentIni > rhs.currentIni
+            }
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+    }
+
+    func initiativeTracker(proxy: ScrollViewProxy) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Initiative")
+                    .font(.headline)
+                    .fontDesign(.serif)
+
+                Spacer()
+                Button {
+                    advanceInitiative()
+                } label: {
+                    Image(systemName: "play.fill")
+                }
+            }.padding()
+            if encounter.combatEntities.isEmpty {
+                Text("No entities added")
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            } else {
+                List(sortedByInitiative) { entity in
+                    Button {
+                        withAnimation {
+                            proxy.scrollTo(entity.id, anchor: .top)
+                        }
+                    } label: {
+                        HStack {
+                            Text(entity.name)
+                                .lineLimit(1)
+                            Spacer()
+                            HStack {
+                                VStack {
+                                    Image(systemName: "figure.run")
+                                    Text("\(entity.currentIni)")
+                                        .fontWeight(.bold)
+                                }
+                                VStack {
+                                    Image(systemName: "heart.fill")
+                                    Text("\(entity.totalHP)")
+                                        .fontWeight(.bold)
+                                }
+                                VStack {
+                                    Image(systemName: "heart")
+                                    Text("\(entity.currentHP)")
+                                        .fontWeight(.bold)
+                                }
+                                
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(entity.id == encounter.actingEntity ? Color.secondary : Color.clear)
+                }
+                .listStyle(.plain)
+            }
+        }
+    }
+
     var addEntityRow: some View {
         HStack {
             Spacer()
@@ -83,6 +168,32 @@ extension EncounterView {
     private func deleteEntity(_ entity: CombatEntity) {
         withAnimation {
             encounter.combatEntities.removeAll(where: {$0 == entity})
+        }
+    }
+    
+    private func advanceInitiative() {
+        let order = sortedByInitiative
+        guard !order.isEmpty else { return }
+
+        guard encounter.currentInitiative != 0,
+              let actingID = encounter.actingEntity,
+              let currentIndex = order.firstIndex(where: { $0.id == actingID }) else {
+            let first = order.first!
+            encounter.currentInitiative = first.currentIni
+            encounter.actingEntity = first.id
+            return
+        }
+
+        let nextIndex = currentIndex + 1
+        if nextIndex < order.count {
+            let next = order[nextIndex]
+            encounter.currentInitiative = next.currentIni
+            encounter.actingEntity = next.id
+        } else {
+            let first = order.first!
+            encounter.currentInitiative = first.currentIni
+            encounter.actingEntity = first.id
+            encounter.elapsedCombatRounds += 1
         }
     }
 }

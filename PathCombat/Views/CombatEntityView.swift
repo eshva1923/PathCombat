@@ -36,97 +36,56 @@ struct CombatEntityView: View {
                 }
             }
             StatRow
-            Section {
                 HStack {
-                    hpSection
-                    Divider()
                     initiativeSection
-                }
-            }.padding(.horizontal, 10)
-        }.frame(maxWidth: .infinity)
+                    hpSection
+                    
+                }.padding(.horizontal, 10)   
+        }
         .padding(.horizontal)
     }
             
             
     
     var initiativeSection: some View {
-        VStack {
-            HStack {
+        HStack {
+            Image(systemName: "figure.run")
+            Text("Initiative")
+                .fontWeight(.bold)
+            TextField(value: $combatEntity.currentIni,
+                      formatter: formatter) {
                 Image(systemName: "figure.run")
-                Text("Initiative")
-                    .font(.title)
-                    .fontWeight(.bold)
-            }
-            HStack {
-                TextField(value: $combatEntity.currentIni,
-                          formatter: formatter) {
-                    HStack {
-                        Image(systemName: "figure.run")
-                        Text("INI")
-                            .font(.title)
-                            .fontWeight(.bold)
-                    }
+            }.fontWeight(.bold)
+            Button {
+                rollIni()
+            } label: {
+                HStack {
+                    Text("Roll Initiative")
+                    Image(systemName: "figure.run.circle")
                 }
-                Button {
-                    rollIni()
-                } label: {
-                    VStack {
-                        Text("Roll Initiative")
-                        Image(systemName: "figure.run.circle")
-                    }
-                }
-            }
+            }.frame(maxWidth: .infinity)
         }
     }
     
     var hpSection: some View {
-        VStack {
             HStack {
                 Image(systemName: "heart.fill")
-                Text("HP")
-                    .font(.title)
+                Text("max HP")
                     .fontWeight(.bold)
-            }
-            HStack {
+                TextField(value: $combatEntity.totalHP,
+                          formatter: formatter) {
+                    Image(systemName: "heart.fill")
+                }.fontWeight(.bold)
+                Spacer()
+                Image(systemName: "heart")
+                Text("curr HP")
+                    .fontWeight(.medium)
                 TextField(value: $combatEntity.currentHP,
                           formatter: formatter) {
-                    HStack {
-                        Image(systemName: "heart.fill")
-                        Text("HP")
-                            .font(.title)
-                            .fontWeight(.bold)
-                        Text("\(combatEntity.totalHP) / ")
-                            .font(.title2)
-                            .fontWeight(.medium)
-                    }
-                }
-                Button {
-                    removeHP()
-                } label: {
-                    VStack {
-                        Text("Remove HP")
-                        Image(systemName: "minus")
-                    }
-                }
-                
-                Button {
-                    addHP()
-                } label: {
-                    VStack {
-                        Text("Add HP")
-                        Image(systemName: "plus")
-                    }
-                }
+                    Image(systemName: "heart.fill")
+                }.fontWeight(.medium)
             }
-        }
-    }
-
-    func addHP() {
-        // popup dialog
-    }
-    
-    func removeHP() {
-        //popup dialog
+        
     }
     
     func rollIni() {

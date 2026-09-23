@@ -15,13 +15,20 @@ final class Encounter {
     var name: String
     var completed: Bool
     var combatEntities: [CombatEntity]
-    
-    init(name: String, id: UUID?, date: Date?, completed: Bool?, combatEntities: [CombatEntity]?) {
+    var currentInitiative: Int = 0
+    var elapsedCombatRounds: Int = 0
+    var actingEntity: UUID?
+
+    init(name: String, id: UUID?, date: Date?, completed: Bool?, combatEntities: [CombatEntity]?,
+         currentInitiative: Int? = nil, elapsedCombatRounds: Int? = nil, actingEntity: UUID? = nil) {
         self.id = id ?? UUID()
         self.name = name
         self.date = date ?? Date()
         self.completed = completed ?? false
         self.combatEntities = combatEntities ?? []
+        self.currentInitiative = currentInitiative ?? 0
+        self.elapsedCombatRounds = elapsedCombatRounds ?? 0
+        self.actingEntity = actingEntity
     }
     
     func formatDate() -> String {
