@@ -15,10 +15,11 @@ final class CombatEntity: Equatable {
     var level: Int
     var iniMod: Int
     var currentIni: Int
-    var totalHP: Int
-    var currentHP: Int
+    var hp: Int
+    var wounds: Int
     var tags: [String]
     var currentConditions: [String]
+    var affectingConditions: [AppliedCondition]
     var ac: Int
     var fortST: Int
     var refST: Int
@@ -27,24 +28,50 @@ final class CombatEntity: Equatable {
     //var actions: [CombatAction] = []
     
     
-    init(name: String?, id: UUID?, tags: [String]?, level: Int?, iniMod: Int?, currentIni: Int?, totalHP: Int?, currentHP: Int?,
-         currentConditions: [String]?, ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?) {
+    init(name: String?, id: UUID?, tags: [String]?, level: Int?, iniMod: Int?, currentIni: Int?, hp: Int?, wounds: Int?,
+         currentConditions: [String]?, ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?,
+         affectingConditions: [AppliedCondition]? = nil) {
         self.name = name ?? "Unnamed combatent"
         self.id = id ?? UUID()
         self.tags = tags ?? []
         self.level = level ?? 1
         self.iniMod = iniMod ?? 0
         self.currentIni = currentIni ?? 0
-        self.totalHP = totalHP ?? 0
-        self.currentHP = currentHP ?? totalHP ?? 0
+        self.hp = hp ?? 0
+        self.wounds = wounds ?? 0
         self.currentConditions = currentConditions ?? []
+        self.affectingConditions = affectingConditions ?? []
         self.ac = ac ?? 10
         self.fortST = fortST ?? 0
         self.refST = refST ?? 0
         self.willST = willST ?? 0
         self.dc = dc ?? 10
     }
-    
+
+    var isDead: Bool {
+        wounds >= hp
+    }
+
+    /// Creates an independent copy of this entity (a fresh identity and reset combat state)
+    /// so the same library template can be added to an encounter multiple times.
+    func copyForEncounter(name: String? = nil) -> CombatEntity {
+        CombatEntity(
+            name: name ?? self.name,
+            id: nil,
+            tags: tags,
+            level: level,
+            iniMod: iniMod,
+            currentIni: nil,
+            hp: hp,
+            wounds: nil,
+            currentConditions: nil,
+            ac: ac,
+            fortST: fortST,
+            refST: refST,
+            willST: willST,
+            dc: dc)
+    }
+
     static func new() -> CombatEntity {
         CombatEntity(
             name: nil,
@@ -53,8 +80,8 @@ final class CombatEntity: Equatable {
             level: nil,
             iniMod: nil,
             currentIni: nil,
-            totalHP: nil,
-            currentHP: nil,
+            hp: nil,
+            wounds: nil,
             currentConditions: nil,
             ac: nil,
             fortST: nil,

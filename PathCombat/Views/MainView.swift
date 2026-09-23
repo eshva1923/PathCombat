@@ -19,19 +19,21 @@ struct MainView: View {
             case .entitiesLibrary:
                 EntitiesLibraryView()
             case .rulesAndConditions:
-                RulesAndConditionsView()
+                ConditionsLibraryView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle(selectedSection.rawValue)
+        .focusEffectDisabled()
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 4) {
+            ToolbarItemGroup(
+                placement: .principal,
+                content: {
                     ForEach(AppSection.allCases) { section in
                         sectionButton(section)
                     }
                 }
-            }
+            )
         }
     }
 
@@ -46,20 +48,19 @@ struct MainView: View {
                     .font(.caption2)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .frame(minWidth: 90)
+            .padding(.vertical, 6)
             .background(
-                selectedSection == section
-                    ? Color.accentColor.opacity(0.25)
-                    : Color.clear
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(selectedSection == section ? Color.accentColor.opacity(0.3) : Color.clear)
             )
-            .cornerRadius(6)
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
     }
 }
 
 #Preview {
     MainView()
-        .modelContainer(for: Encounter.self, inMemory: true)
 }

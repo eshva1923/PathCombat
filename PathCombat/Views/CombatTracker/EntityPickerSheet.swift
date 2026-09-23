@@ -11,16 +11,13 @@ import SwiftData
 struct EntityPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var libraryEntities: [CombatEntity]
-    let excludedEntityIDs: Set<UUID>
     let onAdd: (CombatEntity) -> Void
 
     @State private var selectedEntityID: UUID?
     @State private var hoveredEntityID: UUID?
 
     private var availableEntities: [CombatEntity] {
-        libraryEntities
-            .filter { !excludedEntityIDs.contains($0.id) }
-            .sorted { $0.name < $1.name }
+        libraryEntities.sorted { $0.level > $1.level }
     }
 
     var body: some View {
@@ -73,12 +70,12 @@ struct EntityPickerSheet: View {
             HStack {
                 Text(entity.name)
                     .fontWeight(.semibold)
-                LabelTag(text: "Level \(entity.level)", color: .brown)
                 Spacer()
                 HStack {
                     ForEach(entity.tags, id: \.self) { tag in
-                        LabelTag(text: tag, color: .accentColor)
+                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
+                    LabelTag(text: "Level \(entity.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
             }
             .padding(.vertical, 6)
@@ -103,12 +100,12 @@ struct EntityPickerSheet: View {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     container.mainContext.insert(CombatEntity(
         name: "Eaudrick Vallemar", id: nil, tags: ["Human", "Boss"], level: 8, iniMod: 15,
-        currentIni: nil, totalHP: 200, currentHP: nil, currentConditions: nil,
+        currentIni: nil, hp: 200, wounds: nil, currentConditions: nil,
         ac: 25, fortST: 12, refST: 8, willST: 21, dc: 21))
     container.mainContext.insert(CombatEntity(
         name: "Goblin Scout", id: nil, tags: ["Goblin"], level: 1, iniMod: 4,
-        currentIni: nil, totalHP: 12, currentHP: nil, currentConditions: nil,
+        currentIni: nil, hp: 12, wounds: nil, currentConditions: nil,
         ac: 14, fortST: 2, refST: 4, willST: 1, dc: 12))
-    return EntityPickerSheet(excludedEntityIDs: [], onAdd: { _ in })
+    return EntityPickerSheet(onAdd: { _ in })
         .modelContainer(container)
 }

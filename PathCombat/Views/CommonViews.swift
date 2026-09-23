@@ -9,12 +9,27 @@ import SwiftUI
 struct LabelTag: View {
     let text: String
     let color: Color
+    let imageName: String?
+    let hoverEffect: Bool
+    let hoverColor: Color?
+
+    @State var backgroundColor = Color.clear
     
     var body: some View {
-        Text(text)
-            .padding(3)
-            .background(color)
-            .cornerRadius(5)
+        HStack {
+            if let imageName {
+                Image(systemName: imageName)
+            }
+            Text(text)
+                .padding(3)
+                .background(color)
+                .cornerRadius(5)
+        }
+        .onHover { hovering in
+            guard hoverEffect else { return }
+            let hoverColor = hoverColor ?? Color.secondary
+            backgroundColor = hovering ? hoverColor: Color.clear
+        }
     }
 }
 
@@ -24,6 +39,7 @@ struct LabelStat: View {
     let imageName: String
     let hoverEffect: Bool
     let hoverColor: Color?
+    var isEditable: Bool = true
 
     @State var backgroundColor = Color.clear
 
@@ -36,12 +52,18 @@ struct LabelStat: View {
     var body: some View {
         Label {
             HStack {
-                TextField(value: $value, formatter: Self.formatter) {
-                    EmptyView()
+                if isEditable {
+                    TextField(value: $value, formatter: Self.formatter) {
+                        EmptyView()
+                    }
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .frame(width: 40)
+                } else {
+                    Text("\(value)")
+                        .font(.title3)
+                        .fontWeight(.bold)
                 }
-                .font(.title3)
-                .fontWeight(.bold)
-                .frame(width: 40)
                 Text(text)
             }
         } icon: {

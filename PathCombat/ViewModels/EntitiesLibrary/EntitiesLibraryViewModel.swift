@@ -10,10 +10,13 @@ import SwiftData
 
 @Observable
 final class EntitiesLibraryViewModel {
-    func addEntity(using modelContext: ModelContext) {
+    @discardableResult
+    func addEntity(using modelContext: ModelContext) -> CombatEntity {
+        let newEntity = CombatEntity.new()
         withAnimation {
-            modelContext.insert(CombatEntity.new())
+            modelContext.insert(newEntity)
         }
+        return newEntity
     }
 
     func deleteEntity(_ entity: CombatEntity, using modelContext: ModelContext) {

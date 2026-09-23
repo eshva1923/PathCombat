@@ -10,9 +10,11 @@ import SwiftData
 
 struct CombatEntityView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var allConditions: [Condition]
     @Bindable var combatEntity: CombatEntity
     @State private var viewModel: CombatEntityViewModel
     @State private var tagsText: String
+    @State private var isShowingConditionPicker = false
     let isTemplate: Bool
 
     let formatter: NumberFormatter = {
@@ -36,7 +38,15 @@ struct CombatEntityView: View {
                 }.font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
+                Image(systemName: "figure.stand")
                 levelTag
+                if !combatEntity.affectingConditions.isEmpty {
+                    Image(systemName: "figure.walk.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+                if combatEntity.isDead {
+                    deadIcon
+                }
             }
             .padding(.vertical)
             if isTemplate {
@@ -44,7 +54,7 @@ struct CombatEntityView: View {
             } else {
                 HStack{
                     ForEach (combatEntity.tags, id: \.self) {tag in
-                        LabelTag(text: tag, color: .accentColor)
+                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
                 }
             }
@@ -55,7 +65,10 @@ struct CombatEntityView: View {
                     }
                     hpSection
                     
-                }.padding(.horizontal, 10)   
+                }.padding(.horizontal, 10)
+            if !isTemplate {
+                conditionsSection
+            }
         }
         .padding(.horizontal)
     }
@@ -112,24 +125,90 @@ struct CombatEntityView: View {
     var hpSection: some View {
             HStack {
                 Image(systemName: "heart.fill")
-                Text("max HP")
+                Text("HP")
                     .fontWeight(.bold)
-                TextField(value: $combatEntity.totalHP,
+                TextField(value: $combatEntity.hp,
                           formatter: formatter) {
                     Image(systemName: "heart.fill")
                 }.fontWeight(.bold)
                 if !isTemplate {
                     Spacer()
-                    Image(systemName: "heart")
-                    Text("curr HP")
+                    Image(systemName: "bandage.fill")
+                    Text("Wounds")
                         .fontWeight(.medium)
-                    TextField(value: $combatEntity.currentHP,
+                    TextField(value: $combatEntity.wounds,
                               formatter: formatter) {
-                        Image(systemName: "heart.fill")
+                        Image(systemName: "bandage.fill")
                     }.fontWeight(.medium)
                 }
             }
-        
+
+    }
+
+    var deadIcon: some View {
+        Image(systemName: "figure.teen")
+            .frame(width: 16, height: 16)
+            .rotationEffect(.degrees(90))
+            .foregroundStyle(.red)
+    }
+
+    var conditionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Conditions")
+                    .fontWeight(.bold)
+                Spacer()
+                Button {
+                    isShowingConditionPicker = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+            if combatEntity.affectingConditions.isEmpty {
+                Text("No conditions applied")
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(combatEntity.affectingConditions) { applied in
+                        HStack(spacing: 10) {
+                            Text(conditionName(for: applied))
+                                .fixedSize()
+                            TextField("-", text: valueBinding(for: applied))
+                                .frame(width: 24)
+                                .multilineTextAlignment(.center)
+                            Button {
+                                viewModel.removeCondition(applied)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+        .sheet(isPresented: $isShowingConditionPicker) {
+            ConditionPickerSheet(excludedConditionIDs: Set(combatEntity.affectingConditions.map(\.conditionID))) { condition, value in
+                viewModel.addCondition(condition, value: value)
+            }
+        }
+    }
+
+    private func conditionName(for applied: AppliedCondition) -> String {
+        allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown condition"
+    }
+
+    private func valueBinding(for applied: AppliedCondition) -> Binding<String> {
+        Binding(
+            get: { applied.value.map(String.init) ?? "-" },
+            set: { newValue in
+                guard let index = combatEntity.affectingConditions.firstIndex(where: { $0.id == applied.id }) else {
+                    return
+                }
+                combatEntity.affectingConditions[index].value = Int(newValue)
+            }
+        )
     }
     
     var StatRow: some View {
@@ -140,26 +219,30 @@ struct CombatEntityView: View {
                 value: $combatEntity.fortST,
                 imageName: "figure.boxing",
                 hoverEffect: true,
-                hoverColor: nil)
+                hoverColor: nil,
+                isEditable: isTemplate)
             LabelStat(
                 text: "Reflexes",
                 value: $combatEntity.refST,
                 imageName: "figure.fall",
                 hoverEffect: true,
-                hoverColor: nil)
+                hoverColor: nil,
+                isEditable: isTemplate)
             LabelStat(
                 text: "Will",
                 value: $combatEntity.willST,
                 imageName: "brain.fill",
                 hoverEffect: true,
-                hoverColor: nil)
+                hoverColor: nil,
+                isEditable: isTemplate)
             LabelStat(
                 text: "Perception",
                 value: $combatEntity.iniMod,
                 imageName: "bolt",
                 hoverEffect: true,
-                hoverColor: Color.orange)
-            
+                hoverColor: Color.orange,
+                isEditable: isTemplate)
+
         }
             HStack {
                 LabelStat(
@@ -167,13 +250,15 @@ struct CombatEntityView: View {
                     value: $combatEntity.ac,
                     imageName: "shield.lefthalf.filled",
                     hoverEffect: false,
-                    hoverColor: nil)
+                    hoverColor: nil,
+                    isEditable: isTemplate)
                 LabelStat(
                     text: "DC",
                     value: $combatEntity.dc,
                     imageName: "dot.scope",
                     hoverEffect: false,
-                    hoverColor: nil)
+                    hoverColor: nil,
+                    isEditable: isTemplate)
             }
         }
     }
@@ -189,8 +274,8 @@ struct CombatEntityView: View {
         level: 8,
         iniMod: 15,
         currentIni: nil,
-        totalHP: 200,
-        currentHP: nil,
+        hp: 200,
+        wounds: nil,
         currentConditions: nil,
         ac: 25,
         fortST: 12,

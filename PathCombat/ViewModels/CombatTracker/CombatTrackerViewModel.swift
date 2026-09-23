@@ -10,16 +10,18 @@ import SwiftData
 
 @Observable
 final class CombatTrackerViewModel {
-    func addEncounter(using modelContext: ModelContext) {
+    @discardableResult
+    func addEncounter(using modelContext: ModelContext) -> Encounter {
+        let newItem = Encounter(
+            name: "New Encounter",
+            id: nil,
+            date: nil,
+            completed: nil,
+            combatEntities: nil)
         withAnimation {
-            let newItem = Encounter(
-                name: "New Encounter",
-                id: nil,
-                date: nil,
-                completed: nil,
-                combatEntities: nil)
             modelContext.insert(newItem)
         }
+        return newItem
     }
 
     func deleteEncounter(_ encounter: Encounter, using modelContext: ModelContext) {

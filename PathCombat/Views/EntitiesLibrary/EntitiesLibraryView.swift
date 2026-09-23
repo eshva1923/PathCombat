@@ -11,7 +11,6 @@ import SwiftData
 struct EntitiesLibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var entities: [CombatEntity]
-    @Query private var encounters: [Encounter]
     @State private var viewModel = EntitiesLibraryViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var hoveredEntityID: UUID?
@@ -21,6 +20,14 @@ struct EntitiesLibraryView: View {
         static let minSplitViewWidth = 180.0
         static let idealSplitViewWidth = 200.0
         static let maxSplitViewWidth = 220.0
+    }
+
+    private var navigationTitleText: String {
+        if let selectedEntityID,
+           let entity = entities.first(where: { $0.id == selectedEntityID }) {
+            return "\(AppSection.entitiesLibrary.rawValue) - \(entity.name)"
+        }
+        return AppSection.entitiesLibrary.rawValue
     }
 
     var body: some View {
@@ -49,10 +56,11 @@ struct EntitiesLibraryView: View {
                         .id(entity.id)
                 }
             } else {
-                Text("Select an entity")
+                createEntityButton
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
+        .navigationTitle(navigationTitleText)
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all
@@ -70,6 +78,7 @@ extension EntitiesLibraryView {
                 Text(entity.name)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Button {
@@ -81,9 +90,8 @@ extension EntitiesLibraryView {
                 Image(systemName: "trash")
             }
             .buttonStyle(.plain)
-            .disabled(isEntityInUse(entity))
             .opacity(hoveredEntityID == entity.id ? 1 : 0)
-            .help(isEntityInUse(entity) ? "This entity is used in an encounter and can't be deleted" : "Delete entity")
+            .help("Delete entity")
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
@@ -112,8 +120,18 @@ extension EntitiesLibraryView {
         .buttonStyle(.plain)
     }
 
-    private func isEntityInUse(_ entity: CombatEntity) -> Bool {
-        encounters.contains { $0.combatEntities.contains { $0.id == entity.id } }
+    var createEntityButton: some View {
+        Button {
+            let newEntity = viewModel.addEntity(using: modelContext)
+            selectedEntityID = newEntity.id
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: "plus.circle")
+                    .font(.largeTitle)
+                Text("Create a new entity")
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -123,11 +141,11 @@ extension EntitiesLibraryView {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     container.mainContext.insert(CombatEntity(
         name: "Eaudrick Vallemar", id: nil, tags: ["Human", "Boss"], level: 8, iniMod: 15,
-        currentIni: nil, totalHP: 200, currentHP: nil, currentConditions: nil,
+        currentIni: nil, hp: 200, wounds: nil, currentConditions: nil,
         ac: 25, fortST: 12, refST: 8, willST: 21, dc: 21))
     container.mainContext.insert(CombatEntity(
         name: "Goblin Scout", id: nil, tags: ["Goblin"], level: 1, iniMod: 4,
-        currentIni: nil, totalHP: 12, currentHP: nil, currentConditions: nil,
+        currentIni: nil, hp: 12, wounds: nil, currentConditions: nil,
         ac: 14, fortST: 2, refST: 4, willST: 1, dc: 12))
     return EntitiesLibraryView()
         .modelContainer(container)

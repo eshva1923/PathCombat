@@ -13,6 +13,7 @@ struct PathCombatApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Encounter.self,
+            Condition.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

@@ -21,6 +21,14 @@ struct CombatTrackerView: View {
         static let idealSplitViewWidth = 200.0
         static let maxSplitViewWidth = 220.0
     }
+
+    private var navigationTitleText: String {
+        if let selectedEncounterID,
+           let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
+            return "\(AppSection.combatTracker.rawValue) - \(encounter.name)"
+        }
+        return AppSection.combatTracker.rawValue
+    }
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -44,10 +52,11 @@ struct CombatTrackerView: View {
                let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
                 EncounterView(encounter: encounter)
             } else {
-                Text("Select an encounter")
+                createEncounterButton
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
+        .navigationTitle(navigationTitleText)
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all
@@ -65,6 +74,7 @@ extension CombatTrackerView {
                 Text(encounter.name)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Button {
@@ -101,6 +111,20 @@ extension CombatTrackerView {
             }
             .padding(.vertical, 8)
             .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    var createEncounterButton: some View {
+        Button {
+            let newEncounter = viewModel.addEncounter(using: modelContext)
+            selectedEncounterID = newEncounter.id
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: "plus.circle")
+                    .font(.largeTitle)
+                Text("Create a new encounter")
+            }
         }
         .buttonStyle(.plain)
     }
