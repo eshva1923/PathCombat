@@ -180,6 +180,7 @@ extension EncounterView {
                 Image(systemName: "bandage.fill")
                 Text("\(entity.wounds)")
                     .fontWeight(.bold)
+                    .foregroundStyle(viewModel.woundSeverityColor(for: entity))
             }
         }
     }

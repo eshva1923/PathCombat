@@ -110,6 +110,17 @@ final class EncounterViewModel {
         }
     }
 
+    func woundSeverityColor(for entity: CombatEntity) -> Color {
+        guard entity.hp > 0 else { return .primary }
+        let ratio = Double(entity.wounds) / Double(entity.hp)
+        switch ratio {
+        case ..<0.25: return .primary
+        case ..<0.5: return .green
+        case ...0.75: return .orange
+        default: return .red
+        }
+    }
+
     func rowBackground(for entity: CombatEntity) -> Color {
         if entity.isDead {
             return Color.black.opacity(0.35)

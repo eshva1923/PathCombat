@@ -29,5 +29,16 @@ struct PathCombatApp: App {
             MainView()
         }
         .modelContainer(sharedModelContainer)
+        .commands {
+            CommandGroup(after: .newItem) {
+                Divider()
+                Button("Export Data...") {
+                    DataBackupCommands.exportData(context: sharedModelContainer.mainContext)
+                }
+                Button("Import Data...") {
+                    DataBackupCommands.importData(context: sharedModelContainer.mainContext)
+                }
+            }
+        }
     }
 }
