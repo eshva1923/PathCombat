@@ -15,6 +15,7 @@ struct CombatTrackerView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var hoveredEncounterID: UUID?
     @State private var selectedEncounterID: UUID?
+    @State private var searchText = ""
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -22,15 +23,23 @@ struct CombatTrackerView: View {
         static let maxSplitViewWidth = 220.0
     }
 
+    private var filteredEncounters: [Encounter] {
+        encounters.filter { $0.matchesSearch(searchText) }
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            ScrollView(.vertical) {
-                VStack(spacing: 0) {
-                    ForEach(encounters) { encounter in
-                        encounterRow(encounter)
-                        Divider()
+            VStack(spacing: 0) {
+                searchField
+                Divider()
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        ForEach(filteredEncounters) { encounter in
+                            encounterRow(encounter)
+                            Divider()
+                        }
+                        addEncounterRow
                     }
-                    addEncounterRow
                 }
             }
             .navigationSplitViewColumnWidth(
@@ -63,6 +72,25 @@ struct CombatTrackerView: View {
 }
 
 extension CombatTrackerView {
+    private var searchField: some View {
+        HStack {
+            Icons.search.foregroundStyle(.secondary)
+            TextField("Search by name, tag, or session", text: $searchText)
+                .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
+
     private func encounterRow(_ encounter: Encounter) -> some View {
         HStack {
             Button {

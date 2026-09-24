@@ -9,13 +9,11 @@ enum CSVWriter {
     }
 
     static func row(_ values: [String]) -> String {
-        values.map(field).joined(separator: ",")
+        values.map { field($0) }.joined(separator: ",")
     }
 }
 
 enum CSVParser {
-    /// Parses RFC4180-style CSV text (quoted fields may contain commas/newlines,
-    /// and `""` is an escaped quote) into rows of raw field values.
     static func parseRows(_ text: String) -> [[String]] {
         var rows: [[String]] = []
         var currentRow: [String] = []

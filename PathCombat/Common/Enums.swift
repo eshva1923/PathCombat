@@ -5,15 +5,6 @@
 //  Created by Federico Brandani on 20/09/2026.
 //
 
-enum Difficulty: String {
-    case Trivial = "Trivial"
-    case Low = "Low"
-    case Moderate = "Moderate"
-    case Severe = "Severe"
-    case Extreme = "Extreme"
-    case Deadly = "Deadly"
-}
-
 enum DieType: Int {
     case d2 = 2
     case d4 = 4

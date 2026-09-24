@@ -2,8 +2,6 @@ import AppKit
 import SwiftData
 import UniformTypeIdentifiers
 
-/// Drives the Export/Import Data menu commands: presents the native file panels,
-/// confirms the destructive import, and reports failures via NSAlert.
 enum DataBackupCommands {
     static func exportData(context: ModelContext) {
         let panel = NSSavePanel()

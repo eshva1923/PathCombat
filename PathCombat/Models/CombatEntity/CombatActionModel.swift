@@ -31,7 +31,6 @@ struct CombatAction: Codable, Identifiable, Hashable {
         CombatAction(name: "Melee")
     }
 
-    /// All valid speed values: -1 is a reaction, 0 is a free action, 1-3 are regular actions.
     static let speedValues = [-1, 0, 1, 2, 3]
 
     static func speedSymbol(for speed: Int) -> String {

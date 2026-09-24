@@ -12,23 +12,20 @@ enum DataBackupError: LocalizedError {
     }
 }
 
-/// Exports/imports the whole SwiftData store (conditions, entity templates, encounter-owned
-/// entity copies, encounters) as a single multi-section CSV file: each section starts with a
-/// "#Marker" line, followed by a header row and its data rows.
 enum DataBackupService {
     private static let conditionsMarker = "#Conditions"
     private static let entitiesMarker = "#Entities"
     private static let encounterEntitiesMarker = "#EncounterEntities"
     private static let encountersMarker = "#Encounters"
 
-    private static let conditionsHeader = ["id", "name", "details"]
+    private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
         "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions"
     ]
     private static let encountersHeader = [
         "id", "name", "date", "completed", "currentInitiative", "elapsedCombatRounds",
-        "actingEntity", "combatEntityIDs"
+        "actingEntity", "combatEntityIDs", "session", "tags"
     ]
 
     private static let dateFormatter = ISO8601DateFormatter()
@@ -44,7 +41,10 @@ enum DataBackupService {
         lines.append(conditionsMarker)
         lines.append(CSVWriter.row(conditionsHeader))
         for condition in conditions {
-            lines.append(CSVWriter.row([condition.id.uuidString, condition.name, condition.details]))
+            lines.append(CSVWriter.row([
+                condition.id.uuidString, condition.name, condition.details, condition.damage ?? "",
+                condition.isPersistent ? "true" : "false"
+            ]))
         }
         lines.append("")
 
@@ -73,7 +73,9 @@ enum DataBackupService {
                 String(encounter.currentInitiative),
                 String(encounter.elapsedCombatRounds),
                 encounter.actingEntity?.uuidString ?? "",
-                encounter.combatEntities.map(\.id.uuidString).joined(separator: ";")
+                encounter.combatEntities.map(\.id.uuidString).joined(separator: ";"),
+                String(encounter.session),
+                encounter.tags.joined(separator: ";")
             ]))
         }
 
@@ -103,7 +105,6 @@ enum DataBackupService {
         try context.save()
     }
 
-    /// Deletes all existing encounters, entities, and conditions, then recreates them from the CSV.
     static func importCSV(_ text: String, context: ModelContext) throws {
         let sections = try parseSections(text)
 
@@ -114,7 +115,9 @@ enum DataBackupService {
 
         for row in sections[conditionsMarker] ?? [] {
             guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
-            context.insert(Condition(name: row[1], id: id, description: row[2]))
+            let damage = row.count >= 4 && !row[3].isEmpty ? row[3] : nil
+            let isPersistent = row.count >= 5 ? row[4] == "true" : nil
+            context.insert(Condition(name: row[1], id: id, description: row[2], isPersistent: isPersistent, damage: damage))
         }
 
         for row in sections[entitiesMarker] ?? [] {
@@ -140,7 +143,9 @@ enum DataBackupService {
                 combatEntities: combatEntities,
                 currentInitiative: Int(row[4]),
                 elapsedCombatRounds: Int(row[5]),
-                actingEntity: UUID(uuidString: row[6])))
+                actingEntity: UUID(uuidString: row[6]),
+                session: row.count >= 9 ? Int(row[8]) : nil,
+                tags: row.count >= 10 ? splitList(row[9]) : nil))
         }
 
         try context.save()
@@ -217,13 +222,10 @@ enum DataBackupService {
     }
 
     private static func encode(_ applied: [AppliedCondition]) -> String {
-        applied
-            .map { "\($0.id.uuidString)|\($0.conditionID.uuidString)|\($0.value.map(String.init) ?? "")" }
-            .joined(separator: ";")
+        guard let data = try? JSONEncoder().encode(applied) else { return "[]" }
+        return String(data: data, encoding: .utf8) ?? "[]"
     }
 
-    /// Actions contain free text (name/desc/damage), which can't safely use the pipe/semicolon
-    /// scheme used for `AppliedCondition`, so they're JSON-encoded into a single CSV field instead.
     private static func encodeActions(_ actions: [CombatAction]) -> String {
         guard let data = try? JSONEncoder().encode(actions) else { return "[]" }
         return String(data: data, encoding: .utf8) ?? "[]"
@@ -235,14 +237,8 @@ enum DataBackupService {
     }
 
     private static func decodeAppliedConditions(_ value: String) -> [AppliedCondition] {
-        guard !value.isEmpty else { return [] }
-        return value.split(separator: ";").compactMap { chunk -> AppliedCondition? in
-            let parts = chunk.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
-            guard parts.count == 3, let id = UUID(uuidString: parts[0]), let conditionID = UUID(uuidString: parts[1]) else {
-                return nil
-            }
-            return AppliedCondition(id: id, conditionID: conditionID, value: Int(parts[2]))
-        }
+        guard !value.isEmpty, let data = value.data(using: .utf8) else { return [] }
+        return (try? JSONDecoder().decode([AppliedCondition].self, from: data)) ?? []
     }
 
     private static func parseSections(_ text: String) throws -> [String: [[String]]] {

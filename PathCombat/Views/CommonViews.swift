@@ -8,14 +8,14 @@ import SwiftUI
 
 extension Color {
     static let navy = Color(red: 0.0, green: 0.0, blue: 0.5)
+    static let darkRed = Color(red: 0.55, green: 0.0, blue: 0.0)
 
-    /// Badge color for the PC/Boss role labels shown next to an entity's name.
     static func roleBadgeColor(for role: CombatRole) -> Color {
         switch role {
         case .boss:
-            return Color(red: 0.55, green: 0.0, blue: 0.0)
+            return .darkRed
         case .pc:
-            return .purple
+            return .indigo
         default:
             return .accentColor
         }
@@ -49,14 +49,13 @@ struct LabelTag: View {
     }
 }
 
-/// A condition pill that shows a quick description callout on hover, and a
-/// full-size detail sheet on click (for descriptions that need more room).
-/// Both use a regular background with the tag's color only as a border.
 struct ConditionTag: View {
     let text: String
     let description: String
     let color: Color
+    var isFilled: Bool = false
     var value: Binding<String>? = nil
+    var damage: Binding<String>? = nil
     var onDelete: (() -> Void)? = nil
 
     @State private var isHovering = false
@@ -65,17 +64,18 @@ struct ConditionTag: View {
     var body: some View {
         Text(text)
             .padding(3)
-            .background(color)
+            .background(isFilled ? color : Color.secondary.opacity(0.15))
             .cornerRadius(5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(color, lineWidth: 2)
+            )
             .contentShape(Rectangle())
             .onHover { hovering in
                 isHovering = hovering
             }
             .onTapGesture {
                 isHovering = false
-                // Defer to the next runloop tick so the popover's dismissal transaction
-                // commits before the sheet's presentation transaction begins; presenting
-                // both in the same cycle drops the sheet and logs a CA transaction warning.
                 DispatchQueue.main.async {
                     isShowingDetail = true
                 }
@@ -100,6 +100,13 @@ struct ConditionTag: View {
                                 .fontWeight(.semibold)
                             TextField("-", text: value)
                                 .frame(width: 60)
+                        }
+                    }
+                    if let damage {
+                        HStack {
+                            Text("Damage")
+                                .fontWeight(.semibold)
+                            TextField("e.g. 1d6 Acid", text: damage)
                         }
                     }
                     Divider()

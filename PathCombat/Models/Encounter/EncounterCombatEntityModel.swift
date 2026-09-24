@@ -1,9 +1,6 @@
 import Foundation
 import SwiftData
 
-/// A per-encounter copy of a `CombatEntity` template, with its own identity and combat
-/// state (initiative, wounds, applied conditions). Kept as a distinct type (rather than a
-/// flag on `CombatEntity`) so it can never leak into library/picker queries by mistake.
 @Model
 final class EncounterCombatEntity: Equatable {
     var id: UUID

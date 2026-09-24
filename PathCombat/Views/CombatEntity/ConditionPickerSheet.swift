@@ -12,16 +12,22 @@ struct ConditionPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var libraryConditions: [Condition]
     let excludedConditionIDs: Set<UUID>
-    let onAdd: (Condition, Int?) -> Void
+    let onAdd: (Condition, Int?, String?) -> Void
 
     @State private var selectedConditionID: UUID?
     @State private var hoveredConditionID: UUID?
     @State private var valueText: String = ""
+    @State private var damageText: String = ""
 
     private var availableConditions: [Condition] {
         libraryConditions
             .filter { !excludedConditionIDs.contains($0.id) }
             .sorted { $0.name < $1.name }
+    }
+
+    private var selectedCondition: Condition? {
+        guard let selectedConditionID else { return nil }
+        return availableConditions.first(where: { $0.id == selectedConditionID })
     }
 
     var body: some View {
@@ -47,12 +53,20 @@ struct ConditionPickerSheet: View {
                 }
             }
             Divider()
-            HStack {
-                Text("Value (optional)")
-                TextField("e.g. 2", text: $valueText)
-                    .frame(width: 60)
+            if selectedCondition?.isPersistent == true {
+                HStack {
+                    Text("Damage")
+                    TextField("e.g. 1d6 Acid", text: $damageText)
+                }
+                .padding()
+            } else {
+                HStack {
+                    Text("Value (optional)")
+                    TextField("e.g. 2", text: $valueText)
+                        .frame(width: 60)
+                }
+                .padding()
             }
-            .padding()
             Divider()
             HStack {
                 Button("Cancel") {
@@ -62,7 +76,8 @@ struct ConditionPickerSheet: View {
                 Button("Add") {
                     if let selectedConditionID,
                        let condition = availableConditions.first(where: { $0.id == selectedConditionID }) {
-                        onAdd(condition, Int(valueText))
+                        let damage = condition.isPersistent ? (damageText.isEmpty ? condition.damage : damageText) : nil
+                        onAdd(condition, Int(valueText), damage)
                     }
                     dismiss()
                 }
@@ -72,6 +87,9 @@ struct ConditionPickerSheet: View {
             .padding()
         }
         .frame(minWidth: 420, minHeight: 380)
+        .onChange(of: selectedConditionID) { _, _ in
+            damageText = selectedCondition?.damage ?? ""
+        }
     }
 
     private func conditionRow(_ condition: Condition) -> some View {
@@ -103,6 +121,6 @@ struct ConditionPickerSheet: View {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     container.mainContext.insert(Condition(name: "Prone", id: nil, description: "Flat-footed, lying down."))
     container.mainContext.insert(Condition(name: "Frightened", id: nil, description: "Penalty to checks and DCs."))
-    return ConditionPickerSheet(excludedConditionIDs: [], onAdd: { _, _ in })
+    return ConditionPickerSheet(excludedConditionIDs: [], onAdd: { _, _, _ in })
         .modelContainer(container)
 }

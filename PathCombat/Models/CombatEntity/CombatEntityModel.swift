@@ -74,8 +74,6 @@ final class CombatEntity: Equatable {
             actions: actions)
     }
 
-    /// Matches if `query` is empty, or is contained in the name/role, equals the level exactly,
-    /// or is contained in any tag (all case-insensitive).
     func matchesSearch(_ query: String) -> Bool {
         guard !query.isEmpty else { return true }
         let lowered = query.lowercased()

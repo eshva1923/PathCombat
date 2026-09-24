@@ -1,9 +1,6 @@
 import Foundation
 import Observation
 
-/// Shared combat-stat surface for `CombatEntity` (reusable library templates) and
-/// `EncounterCombatEntity` (per-encounter copies), so `CombatEntityView`/`CombatEntityViewModel`
-/// can work with either without the two ever being the same persisted type.
 protocol CombatEntityStats: AnyObject, Observable {
     var id: UUID { get }
     var name: String { get set }

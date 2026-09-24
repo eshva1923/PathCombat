@@ -184,12 +184,15 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     .foregroundStyle(.secondary)
             } else {
                 HStack(spacing: 8) {
-                    ForEach(combatEntity.affectingConditions) { applied in
+                    ForEach(viewModel.sortedConditions(combatEntity.affectingConditions, allConditions: allConditions)) { applied in
+                        let isPersistentDamage = viewModel.isPersistentDamage(for: applied, allConditions: allConditions)
                         ConditionTag(
                             text: viewModel.conditionTagText(for: applied, allConditions: allConditions),
                             description: viewModel.conditionDescription(for: applied, allConditions: allConditions),
-                            color: .orange,
-                            value: valueBinding(for: applied),
+                            color: viewModel.conditionTagColor(for: applied, allConditions: allConditions),
+                            isFilled: isPersistentDamage,
+                            value: isPersistentDamage ? nil : valueBinding(for: applied),
+                            damage: isPersistentDamage ? damageBinding(for: applied) : nil,
                             onDelete: { viewModel.removeCondition(applied) })
                     }
                 }
@@ -200,10 +203,19 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         .cornerRadius(8)
         .padding(.horizontal, 10)
         .sheet(isPresented: $isShowingConditionPicker) {
-            ConditionPickerSheet(excludedConditionIDs: Set(combatEntity.affectingConditions.map(\.conditionID))) { condition, value in
-                viewModel.addCondition(condition, value: value)
+            ConditionPickerSheet(excludedConditionIDs: nonStackableAppliedConditionIDs) { condition, value, damage in
+                viewModel.addCondition(condition, value: value, damage: damage)
             }
         }
+    }
+
+    /// Conditions already applied are excluded from the picker so they can't be duplicated —
+    /// except persistent-damage conditions, which can stack (each with its own damage text).
+    private var nonStackableAppliedConditionIDs: Set<UUID> {
+        Set(combatEntity.affectingConditions.compactMap { applied -> UUID? in
+            let condition = allConditions.first(where: { $0.id == applied.conditionID })
+            return (condition?.isPersistent ?? false) ? nil : applied.conditionID
+        })
     }
 
     var actionsSection: some View {
@@ -312,6 +324,13 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         Binding(
             get: { viewModel.conditionValueText(for: applied) },
             set: { newValue in viewModel.setConditionValue(applied, to: newValue) }
+        )
+    }
+
+    private func damageBinding(for applied: AppliedCondition) -> Binding<String> {
+        Binding(
+            get: { viewModel.conditionDamageText(for: applied) },
+            set: { newValue in viewModel.setConditionDamage(applied, to: newValue) }
         )
     }
     

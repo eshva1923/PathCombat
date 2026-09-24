@@ -16,6 +16,13 @@ final class EncounterViewModel {
         self.encounter = encounter
     }
 
+    func updateTags(from text: String) {
+        encounter.tags = text
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
     var sortedByInitiative: [EncounterCombatEntity] {
         encounter.combatEntities.sorted { lhs, rhs in
             if lhs.currentIni != rhs.currentIni {
@@ -129,11 +136,45 @@ final class EncounterViewModel {
     }
 
     func conditionTagText(_ applied: AppliedCondition, allConditions: [Condition]) -> String {
+        guard allConditions.first(where: { $0.id == applied.conditionID }) != nil else {
+            return "Unknown"
+        }
+        if let damage = applied.damage {
+            return damage
+        }
         let name = allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown"
         guard let value = applied.value else {
             return name
         }
         return "\(name) \(value)"
+    }
+
+    func isPersistentDamage(_ applied: AppliedCondition, allConditions: [Condition]) -> Bool {
+        allConditions.first(where: { $0.id == applied.conditionID })?.isPersistent ?? false
+    }
+
+    func conditionTagColor(_ applied: AppliedCondition, allConditions: [Condition]) -> Color {
+        isPersistentDamage(applied, allConditions: allConditions) ? .darkRed : .orange
+    }
+
+    /// Persistent-damage conditions always sort last, so they stand out at the end of the list.
+    func sortedConditions(_ conditions: [AppliedCondition], allConditions: [Condition]) -> [AppliedCondition] {
+        conditions.sorted { lhs, rhs in
+            let lhsPersistent = isPersistentDamage(lhs, allConditions: allConditions)
+            let rhsPersistent = isPersistentDamage(rhs, allConditions: allConditions)
+            return !lhsPersistent && rhsPersistent
+        }
+    }
+
+    func conditionDamageText(for applied: AppliedCondition) -> String {
+        applied.damage ?? ""
+    }
+
+    func setConditionDamage(_ applied: AppliedCondition, on entity: EncounterCombatEntity, to newValue: String) {
+        guard let index = entity.affectingConditions.firstIndex(where: { $0.id == applied.id }) else {
+            return
+        }
+        entity.affectingConditions[index].damage = newValue.isEmpty ? nil : newValue
     }
 
     func conditionDescription(for applied: AppliedCondition, allConditions: [Condition]) -> String {
@@ -148,9 +189,6 @@ final class EncounterViewModel {
         }
     }
 
-    /// Counts how many copies of `template` are already in the encounter, matched by name
-    /// family (e.g. "Skeleton", "Skeleton 2", ...). Only meaningful for non-unique roles;
-    /// PC/Boss templates are capped at one by `canAdd` anyway.
     func addedCount(for template: CombatEntity) -> Int {
         encounter.combatEntities.filter { belongsToFamily($0.name, baseName: template.name) }.count
     }

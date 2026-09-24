@@ -15,6 +15,7 @@ struct ConditionsLibraryView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var hoveredConditionID: UUID?
     @State private var selectedConditionID: UUID?
+    @State private var searchText = ""
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -22,15 +23,23 @@ struct ConditionsLibraryView: View {
         static let maxSplitViewWidth = 220.0
     }
 
+    private var filteredConditions: [Condition] {
+        conditions.filter { $0.matchesSearch(searchText) }
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            ScrollView(.vertical) {
-                VStack(spacing: 0) {
-                    ForEach(conditions) { condition in
-                        conditionRow(condition)
-                        Divider()
+            VStack(spacing: 0) {
+                searchField
+                Divider()
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        ForEach(filteredConditions) { condition in
+                            conditionRow(condition)
+                            Divider()
+                        }
+                        addConditionRow
                     }
-                    addConditionRow
                 }
             }
             .navigationSplitViewColumnWidth(
@@ -64,6 +73,25 @@ struct ConditionsLibraryView: View {
 }
 
 extension ConditionsLibraryView {
+    private var searchField: some View {
+        HStack {
+            Icons.search.foregroundStyle(.secondary)
+            TextField("Search by name or damage", text: $searchText)
+                .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
+
     private func conditionRow(_ condition: Condition) -> some View {
         HStack {
             Button {
@@ -128,6 +156,15 @@ extension ConditionsLibraryView {
         .buttonStyle(.plain)
     }
 
+    private func damageBinding(for condition: Condition) -> Binding<String> {
+        Binding(
+            get: { condition.damage ?? "" },
+            set: { newValue in
+                condition.damage = newValue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : newValue
+            }
+        )
+    }
+
     private func conditionDetail(_ condition: Condition) -> some View {
         @Bindable var condition = condition
         return ScrollView {
@@ -142,6 +179,12 @@ extension ConditionsLibraryView {
                     .font(.headline)
                 TextEditor(text: $condition.details)
                     .frame(minHeight: 200)
+                Divider()
+                Toggle("Persistent Damage", isOn: $condition.isPersistent)
+                    .font(.headline)
+                if condition.isPersistent {
+                    TextField("Default damage, e.g. 1d6 Acid (optional — can be set per application instead)", text: damageBinding(for: condition))
+                }
             }
             .padding()
         }

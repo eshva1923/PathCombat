@@ -8,11 +8,19 @@ struct EncounterView: View {
     @State private var viewModel: EncounterViewModel
     @State private var isShowingEntityPicker = false
     @State private var selectedEntityID: UUID?
+    @State private var tagsText: String
+
+    let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
 
     init(encounter: Encounter) {
         self.encounter = encounter
         self._viewModel = State(initialValue: EncounterViewModel(encounter: encounter))
         self._selectedEntityID = State(initialValue: encounter.actingEntity)
+        self._tagsText = State(initialValue: encounter.tags.joined(separator: ", "))
     }
 
     var body: some View {
@@ -154,15 +162,25 @@ extension EncounterView {
             }
             if !entity.affectingConditions.isEmpty {
                 HStack {
-                    ForEach(entity.affectingConditions) { applied in
+                    ForEach(viewModel.sortedConditions(entity.affectingConditions, allConditions: allConditions)) { applied in
+                        let isPersistentDamage = viewModel.isPersistentDamage(applied, allConditions: allConditions)
                         ConditionTag(
                             text: viewModel.conditionTagText(applied, allConditions: allConditions),
                             description: viewModel.conditionDescription(for: applied, allConditions: allConditions),
-                            color: .orange)
+                            color: viewModel.conditionTagColor(applied, allConditions: allConditions),
+                            isFilled: isPersistentDamage,
+                            damage: isPersistentDamage ? damageBinding(for: applied, entity: entity) : nil)
                     }
                 }
             }
         }
+    }
+
+    private func damageBinding(for applied: AppliedCondition, entity: EncounterCombatEntity) -> Binding<String> {
+        Binding(
+            get: { viewModel.conditionDamageText(for: applied) },
+            set: { newValue in viewModel.setConditionDamage(applied, on: entity, to: newValue) }
+        )
     }
 
     private func initiativeRowHeader(_ entity: EncounterCombatEntity) -> some View {
@@ -231,9 +249,16 @@ extension EncounterView {
     var topRow: some View {
         HStack {
             TextField("Encounter name", text: $encounter.name)
-            Text("Difficulty: ")
-            LabelTag(text: encounter.calculateDifficulty().rawValue,
-                color: .blue, imageName: nil, hoverEffect: false, hoverColor: nil)
+            Text("Session")
+            TextField(value: $encounter.session, formatter: formatter) {
+                EmptyView()
+            }
+            .frame(width: 40)
+            Image(systemName: "tag")
+            TextField("Tags (comma separated)", text: $tagsText)
+                .onChange(of: tagsText) { _, newValue in
+                    viewModel.updateTags(from: newValue)
+                }
             Button {
                 encounter.completed.toggle()
             } label: {
