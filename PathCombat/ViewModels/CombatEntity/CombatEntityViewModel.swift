@@ -9,10 +9,10 @@ import Foundation
 import Observation
 
 @Observable
-final class CombatEntityViewModel {
-    let combatEntity: CombatEntity
+final class CombatEntityViewModel<Entity: CombatEntityStats> {
+    let combatEntity: Entity
 
-    init(combatEntity: CombatEntity) {
+    init(combatEntity: Entity) {
         self.combatEntity = combatEntity
     }
 
@@ -31,8 +31,16 @@ final class CombatEntityViewModel {
         combatEntity.affectingConditions.removeAll(where: { $0.id == applied.id })
     }
 
-    func conditionName(for applied: AppliedCondition, allConditions: [Condition]) -> String {
-        allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown condition"
+    func conditionTagText(for applied: AppliedCondition, allConditions: [Condition]) -> String {
+        let name = allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown condition"
+        guard let value = applied.value else {
+            return name
+        }
+        return "\(name) \(value)"
+    }
+
+    func conditionDescription(for applied: AppliedCondition, allConditions: [Condition]) -> String {
+        allConditions.first(where: { $0.id == applied.conditionID })?.details ?? ""
     }
 
     func conditionValueText(for applied: AppliedCondition) -> String {

@@ -62,9 +62,15 @@ struct EncounterView: View {
                     .frame(minWidth: 160, idealWidth: 160, maxWidth: 400, maxHeight: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onChange(of: encounter.actingEntity) { _, newValue in
+                guard let newValue else { return }
+                withAnimation {
+                    proxy.scrollTo(newValue, anchor: .top)
+                }
+            }
         }
         .sheet(isPresented: $isShowingEntityPicker) {
-            EntityPickerSheet(isAddable: { viewModel.canAdd($0) }) { template in
+            EntityPickerSheet(isAddable: { viewModel.canAdd($0) }, countInEncounter: { viewModel.addedCount(for: $0) }) { template in
                 viewModel.addEntity(from: template)
             }
         }
@@ -122,31 +128,40 @@ extension EncounterView {
         }
     }
 
-    private func initiativeRow(_ entity: CombatEntity, proxy: ScrollViewProxy) -> some View {
-        Button {
-            withAnimation {
-                proxy.scrollTo(entity.id, anchor: .top)
-            }
-        } label: {
-            VStack(alignment: .leading) {
+    private func initiativeRow(_ entity: EncounterCombatEntity, proxy: ScrollViewProxy) -> some View {
+        // The condition tags have their own tap gesture (to open the detail sheet); nesting
+        // that inside this row's scroll-to-entity Button breaks the List row's click handling
+        // on macOS, so the tags are a sibling of the button rather than inside its label.
+        VStack(alignment: .leading) {
+            Button {
+                withAnimation {
+                    proxy.scrollTo(entity.id, anchor: .top)
+                }
+            } label: {
                 initiativeRowHeader(entity)
+            }
+            if !entity.affectingConditions.isEmpty {
                 HStack {
                     ForEach(entity.affectingConditions) { applied in
-                        LabelTag(
+                        ConditionTag(
                             text: viewModel.conditionTagText(applied, allConditions: allConditions),
-                            color: .orange, imageName: nil, hoverEffect: false, hoverColor: nil)
+                            description: viewModel.conditionDescription(for: applied, allConditions: allConditions),
+                            color: .orange)
                     }
                 }
             }
         }
     }
 
-    private func initiativeRowHeader(_ entity: CombatEntity) -> some View {
+    private func initiativeRowHeader(_ entity: EncounterCombatEntity) -> some View {
         HStack {
+            if let roleIcon = viewModel.roleIcon(for: entity) {
+                Image(systemName: roleIcon)
+            }
             Text(entity.name)
                 .lineLimit(1)
-            if let tag = viewModel.uniquePerEncounterTag(for: entity) {
-                LabelTag(text: tag, color: .entityTagColor(for: tag), imageName: nil, hoverEffect: false, hoverColor: nil)
+            if let roleText = viewModel.roleBadgeText(for: entity) {
+                LabelTag(text: roleText, color: .roleBadgeColor(for: entity.role), imageName: nil, hoverEffect: false, hoverColor: nil)
             }
             if !entity.affectingConditions.isEmpty {
                 Image(systemName: "figure.walk.triangle.fill")
@@ -163,7 +178,7 @@ extension EncounterView {
         }
     }
 
-    private func initiativeRowStats(_ entity: CombatEntity) -> some View {
+    private func initiativeRowStats(_ entity: EncounterCombatEntity) -> some View {
         HStack {
             VStack {
                 Image(systemName: "figure.run")
@@ -234,7 +249,7 @@ extension EncounterView {
                      fortST: 12,
                      refST: 8,
                      willST: 21,
-                     dc: 21)
+                     dc: 21).copyForEncounter()
     ]
     let encounter = Encounter.init(
         name: "test encounter",
@@ -248,12 +263,12 @@ extension EncounterView {
 #Preview("Ready / Started") {
     let ready = CombatEntity(
         name: "Ready Guy", id: nil, tags: [], level: 1, iniMod: 5, currentIni: 12,
-        hp: 20, wounds: nil, currentConditions: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15)
+        hp: 20, wounds: nil, currentConditions: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15).copyForEncounter()
     let readyEncounter = Encounter(name: "Ready", id: nil, date: nil, completed: nil, combatEntities: [ready])
 
     let started = CombatEntity(
         name: "Started Guy", id: nil, tags: [], level: 1, iniMod: 5, currentIni: 12,
-        hp: 20, wounds: nil, currentConditions: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15)
+        hp: 20, wounds: nil, currentConditions: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15).copyForEncounter()
     let startedEncounter = Encounter(
         name: "Started", id: nil, date: nil, completed: nil, combatEntities: [started],
         currentInitiative: 12, elapsedCombatRounds: 0, actingEntity: started.id)

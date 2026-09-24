@@ -14,12 +14,12 @@ final class Encounter {
     var date: Date
     var name: String
     var completed: Bool
-    var combatEntities: [CombatEntity]
+    var combatEntities: [EncounterCombatEntity]
     var currentInitiative: Int = 0
     var elapsedCombatRounds: Int = 0
     var actingEntity: UUID?
 
-    init(name: String, id: UUID?, date: Date?, completed: Bool?, combatEntities: [CombatEntity]?,
+    init(name: String, id: UUID?, date: Date?, completed: Bool?, combatEntities: [EncounterCombatEntity]?,
          currentInitiative: Int? = nil, elapsedCombatRounds: Int? = nil, actingEntity: UUID? = nil) {
         self.id = id ?? UUID()
         self.name = name

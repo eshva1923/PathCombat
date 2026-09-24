@@ -25,12 +25,13 @@ final class CombatEntity: Equatable {
     var refST: Int
     var willST: Int
     var dc: Int
+    var role: CombatRole
     //var actions: [CombatAction] = []
-    
-    
+
+
     init(name: String?, id: UUID?, tags: [String]?, level: Int?, iniMod: Int?, currentIni: Int?, hp: Int?, wounds: Int?,
          currentConditions: [String]?, ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?,
-         affectingConditions: [AppliedCondition]? = nil) {
+         affectingConditions: [AppliedCondition]? = nil, role: CombatRole? = nil) {
         self.name = name ?? "Unnamed combatent"
         self.id = id ?? UUID()
         self.tags = tags ?? []
@@ -46,30 +47,29 @@ final class CombatEntity: Equatable {
         self.refST = refST ?? 0
         self.willST = willST ?? 0
         self.dc = dc ?? 10
+        self.role = role ?? .attacker
     }
 
-    var isDead: Bool {
-        wounds >= hp
-    }
-
-    /// Creates an independent copy of this entity (a fresh identity and reset combat state)
+    /// Creates an independent per-encounter copy (a fresh identity and reset combat state)
     /// so the same library template can be added to an encounter multiple times.
-    func copyForEncounter(name: String? = nil) -> CombatEntity {
-        CombatEntity(
-            name: name ?? self.name,
+    func copyForEncounter(name: String? = nil) -> EncounterCombatEntity {
+        EncounterCombatEntity(
             id: nil,
-            tags: tags,
+            name: name ?? self.name,
             level: level,
             iniMod: iniMod,
-            currentIni: nil,
+            currentIni: 0,
             hp: hp,
-            wounds: nil,
-            currentConditions: nil,
+            wounds: 0,
+            tags: tags,
+            currentConditions: [],
+            affectingConditions: [],
             ac: ac,
             fortST: fortST,
             refST: refST,
             willST: willST,
-            dc: dc)
+            dc: dc,
+            role: role)
     }
 
     static func new() -> CombatEntity {
@@ -90,3 +90,5 @@ final class CombatEntity: Equatable {
             dc: nil)
     }
 }
+
+extension CombatEntity: CombatEntityStats {}

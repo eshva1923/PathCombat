@@ -67,10 +67,18 @@ extension EntitiesLibraryView {
             Button {
                 selectedEntityID = entity.id
             } label: {
-                Text(entity.name)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                HStack {
+                    if let roleIcon = entity.role.icon {
+                        Image(systemName: roleIcon)
+                    }
+                    Text(entity.name)
+                        .lineLimit(1)
+                    Spacer()
+                    Text("Level \(entity.level)")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Button {

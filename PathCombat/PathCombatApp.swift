@@ -14,6 +14,8 @@ struct PathCombatApp: App {
         let schema = Schema([
             Encounter.self,
             Condition.self,
+            CombatEntity.self,
+            EncounterCombatEntity.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -37,6 +39,22 @@ struct PathCombatApp: App {
                 }
                 Button("Import Data...") {
                     DataBackupCommands.importData(context: sharedModelContainer.mainContext)
+                }
+                Divider()
+                Menu("Wipe Data") {
+                    Button("Wipe Encounters") {
+                        DataBackupCommands.wipeEncounters(context: sharedModelContainer.mainContext)
+                    }
+                    Button("Wipe Entities") {
+                        DataBackupCommands.wipeEntities(context: sharedModelContainer.mainContext)
+                    }
+                    Button("Wipe Conditions") {
+                        DataBackupCommands.wipeConditions(context: sharedModelContainer.mainContext)
+                    }
+                    Divider()
+                    Button("Wipe All") {
+                        DataBackupCommands.wipeAll(context: sharedModelContainer.mainContext)
+                    }
                 }
             }
         }

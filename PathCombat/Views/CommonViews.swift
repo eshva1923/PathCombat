@@ -7,16 +7,17 @@
 import SwiftUI
 
 extension Color {
-    /// Special-cased background color for entity tags: PC and Boss get a distinct
-    /// color so they stand out from ordinary tags in the entity/initiative lists.
-    static func entityTagColor(for tag: String, default defaultColor: Color = .accentColor) -> Color {
-        switch tag.lowercased() {
-        case "boss":
+    static let navy = Color(red: 0.0, green: 0.0, blue: 0.5)
+
+    /// Badge color for the PC/Boss role labels shown next to an entity's name.
+    static func roleBadgeColor(for role: CombatRole) -> Color {
+        switch role {
+        case .boss:
             return Color(red: 0.55, green: 0.0, blue: 0.0)
-        case "pc":
+        case .pc:
             return .purple
         default:
-            return defaultColor
+            return .accentColor
         }
     }
 }
@@ -45,6 +46,89 @@ struct LabelTag: View {
             let hoverColor = hoverColor ?? Color.secondary
             backgroundColor = hovering ? hoverColor: Color.clear
         }
+    }
+}
+
+/// A condition pill that shows a quick description callout on hover, and a
+/// full-size detail sheet on click (for descriptions that need more room).
+/// Both use a regular background with the tag's color only as a border.
+struct ConditionTag: View {
+    let text: String
+    let description: String
+    let color: Color
+    var value: Binding<String>? = nil
+    var onDelete: (() -> Void)? = nil
+
+    @State private var isHovering = false
+    @State private var isShowingDetail = false
+
+    var body: some View {
+        Text(text)
+            .padding(3)
+            .background(color)
+            .cornerRadius(5)
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
+            }
+            .onTapGesture {
+                isHovering = false
+                // Defer to the next runloop tick so the popover's dismissal transaction
+                // commits before the sheet's presentation transaction begins; presenting
+                // both in the same cycle drops the sheet and logs a CA transaction warning.
+                DispatchQueue.main.async {
+                    isShowingDetail = true
+                }
+            }
+            .popover(isPresented: $isHovering, arrowEdge: .bottom) {
+                Text(description.isEmpty ? "No description" : description)
+                    .padding()
+                    .frame(maxWidth: 280, alignment: .leading)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(color, lineWidth: 3)
+                    )
+            }
+            .sheet(isPresented: $isShowingDetail) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(text)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    if let value {
+                        HStack {
+                            Text("Value")
+                                .fontWeight(.semibold)
+                            TextField("-", text: value)
+                                .frame(width: 60)
+                        }
+                    }
+                    Divider()
+                    ScrollView {
+                        Text(description.isEmpty ? "No description" : description)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    HStack {
+                        if let onDelete {
+                            Button(role: .destructive) {
+                                onDelete()
+                                isShowingDetail = false
+                            } label: {
+                                Label("Remove Condition", systemImage: "trash")
+                            }
+                        }
+                        Spacer()
+                        Button("Close") {
+                            isShowingDetail = false
+                        }
+                    }
+                }
+                .padding()
+                .frame(minWidth: 360, minHeight: 260)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(color, lineWidth: 4)
+                )
+            }
     }
 }
 

@@ -45,6 +45,54 @@ enum DataBackupCommands {
         }
     }
 
+    static func wipeEncounters(context: ModelContext) {
+        confirmAndWipe(
+            title: "Wipe all encounters?",
+            message: "This will permanently delete every encounter. Entities and conditions are not affected.",
+            context: context,
+            wipe: DataBackupService.wipeEncounters)
+    }
+
+    static func wipeEntities(context: ModelContext) {
+        confirmAndWipe(
+            title: "Wipe all entities?",
+            message: "This will permanently delete every entity in the library, including any copies currently in encounters.",
+            context: context,
+            wipe: DataBackupService.wipeEntities)
+    }
+
+    static func wipeConditions(context: ModelContext) {
+        confirmAndWipe(
+            title: "Wipe all conditions?",
+            message: "This will permanently delete every condition definition, and remove any applied conditions that reference them.",
+            context: context,
+            wipe: DataBackupService.wipeConditions)
+    }
+
+    static func wipeAll(context: ModelContext) {
+        confirmAndWipe(
+            title: "Wipe all data?",
+            message: "This will permanently delete every encounter, entity, and condition.",
+            context: context,
+            wipe: DataBackupService.wipeAll)
+    }
+
+    private static func confirmAndWipe(title: String, message: String, context: ModelContext, wipe: (ModelContext) throws -> Void) {
+        let confirmation = NSAlert()
+        confirmation.messageText = title
+        confirmation.informativeText = message
+        confirmation.alertStyle = .warning
+        confirmation.addButton(withTitle: "Wipe")
+        confirmation.addButton(withTitle: "Cancel")
+        guard confirmation.runModal() == .alertFirstButtonReturn else { return }
+
+        do {
+            try wipe(context)
+        } catch {
+            presentError(error, title: "Wipe Failed")
+        }
+    }
+
     private static func presentError(_ error: Error, title: String) {
         let alert = NSAlert()
         alert.messageText = title

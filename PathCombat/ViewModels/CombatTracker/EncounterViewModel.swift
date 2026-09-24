@@ -16,7 +16,7 @@ final class EncounterViewModel {
         self.encounter = encounter
     }
 
-    var sortedByInitiative: [CombatEntity] {
+    var sortedByInitiative: [EncounterCombatEntity] {
         encounter.combatEntities.sorted { lhs, rhs in
             if lhs.currentIni != rhs.currentIni {
                 return lhs.currentIni > rhs.currentIni
@@ -29,27 +29,24 @@ final class EncounterViewModel {
         encounter.date.formatted(date: .long, time: .shortened)
     }
 
-    private static let uniquePerEncounterTags: Set<String> = ["pc", "boss"]
+    private static let uniquePerEncounterRoles: Set<CombatRole> = [.pc, .boss]
 
     func canAdd(_ template: CombatEntity) -> Bool {
-        guard isUniquePerEncounter(template) else { return true }
+        guard Self.uniquePerEncounterRoles.contains(template.role) else { return true }
         return !encounter.combatEntities.contains { $0.name == template.name }
     }
 
-    private func isUniquePerEncounter(_ entity: CombatEntity) -> Bool {
-        entity.tags.contains { Self.uniquePerEncounterTags.contains($0.lowercased()) }
+    func roleBadgeText(for entity: EncounterCombatEntity) -> String? {
+        guard Self.uniquePerEncounterRoles.contains(entity.role) else { return nil }
+        return entity.role.displayName
     }
 
-    func uniquePerEncounterTag(for entity: CombatEntity) -> String? {
-        entity.tags.first { Self.uniquePerEncounterTags.contains($0.lowercased()) }
+    func roleIcon(for entity: EncounterCombatEntity) -> String? {
+        entity.role.icon
     }
 
-    private func isPC(_ entity: CombatEntity) -> Bool {
-        entity.tags.contains { $0.lowercased() == "pc" }
-    }
-
-    var npcsNeedingInitiative: [CombatEntity] {
-        encounter.combatEntities.filter { $0.currentIni == 0 && !isPC($0) }
+    var npcsNeedingInitiative: [EncounterCombatEntity] {
+        encounter.combatEntities.filter { $0.currentIni == 0 && $0.role != .pc }
     }
 
     var needsNPCInitiativeRoll: Bool {
@@ -110,7 +107,7 @@ final class EncounterViewModel {
         }
     }
 
-    func woundSeverityColor(for entity: CombatEntity) -> Color {
+    func woundSeverityColor(for entity: EncounterCombatEntity) -> Color {
         guard entity.hp > 0 else { return .primary }
         let ratio = Double(entity.wounds) / Double(entity.hp)
         switch ratio {
@@ -121,7 +118,7 @@ final class EncounterViewModel {
         }
     }
 
-    func rowBackground(for entity: CombatEntity) -> Color {
+    func rowBackground(for entity: EncounterCombatEntity) -> Color {
         if entity.isDead {
             return Color.black.opacity(0.35)
         } else if entity.id == encounter.actingEntity {
@@ -139,12 +136,23 @@ final class EncounterViewModel {
         return "\(name) \(value)"
     }
 
+    func conditionDescription(for applied: AppliedCondition, allConditions: [Condition]) -> String {
+        allConditions.first(where: { $0.id == applied.conditionID })?.details ?? ""
+    }
+
     func addEntity(from template: CombatEntity) {
         guard canAdd(template) else { return }
         withAnimation {
             let copy = template.copyForEncounter(name: nextAvailableName(for: template.name))
             encounter.combatEntities.append(copy)
         }
+    }
+
+    /// Counts how many copies of `template` are already in the encounter, matched by name
+    /// family (e.g. "Skeleton", "Skeleton 2", ...). Only meaningful for non-unique roles;
+    /// PC/Boss templates are capped at one by `canAdd` anyway.
+    func addedCount(for template: CombatEntity) -> Int {
+        encounter.combatEntities.filter { belongsToFamily($0.name, baseName: template.name) }.count
     }
 
     private func nextAvailableName(for baseName: String) -> String {
@@ -159,7 +167,11 @@ final class EncounterViewModel {
         return "\(baseName) \(highest + 1)"
     }
 
-    func deleteEntity(_ entity: CombatEntity) {
+    private func belongsToFamily(_ name: String, baseName: String) -> Bool {
+        name == baseName || name.hasPrefix("\(baseName) ")
+    }
+
+    func deleteEntity(_ entity: EncounterCombatEntity) {
         withAnimation {
             encounter.combatEntities.removeAll(where: { $0 == entity })
         }

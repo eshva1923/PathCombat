@@ -8,11 +8,11 @@
 import SwiftUI
 import SwiftData
 
-struct CombatEntityView: View {
+struct CombatEntityView<Entity: CombatEntityStats>: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allConditions: [Condition]
-    @Bindable var combatEntity: CombatEntity
-    @State private var viewModel: CombatEntityViewModel
+    @Bindable var combatEntity: Entity
+    @State private var viewModel: CombatEntityViewModel<Entity>
     @State private var tagsText: String
     @State private var isShowingConditionPicker = false
     let isTemplate: Bool
@@ -23,7 +23,7 @@ struct CombatEntityView: View {
             return formatter
     }()
 
-    init(combatEntity: CombatEntity, isTemplate: Bool = false) {
+    init(combatEntity: Entity, isTemplate: Bool = false) {
         self.combatEntity = combatEntity
         self.isTemplate = isTemplate
         self._viewModel = State(initialValue: CombatEntityViewModel(combatEntity: combatEntity))
@@ -49,12 +49,13 @@ struct CombatEntityView: View {
                 }
             }
             .padding(.vertical)
+            roleField
             if isTemplate {
                 tagsField
             } else {
                 HStack{
                     ForEach (combatEntity.tags, id: \.self) {tag in
-                        LabelTag(text: tag, color: .entityTagColor(for: tag), imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
                 }
             }
@@ -84,6 +85,19 @@ struct CombatEntityView: View {
         .padding(3)
         .background(Color.brown)
         .cornerRadius(5)
+    }
+
+    var roleField: some View {
+        HStack {
+            Image(systemName: "person.fill.badge.plus")
+            Picker("Role", selection: $combatEntity.role) {
+                ForEach(CombatRole.allCases) { role in
+                    Text(role.displayName).tag(role)
+                }
+            }
+            .labelsHidden()
+        }
+        .padding(.horizontal, 10)
     }
 
     var tagsField: some View {
@@ -165,21 +179,14 @@ struct CombatEntityView: View {
                 Text("No conditions applied")
                     .foregroundStyle(.secondary)
             } else {
-                VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
                     ForEach(combatEntity.affectingConditions) { applied in
-                        HStack(spacing: 10) {
-                            Text(viewModel.conditionName(for: applied, allConditions: allConditions))
-                                .fixedSize()
-                            TextField("-", text: valueBinding(for: applied))
-                                .frame(width: 24)
-                                .multilineTextAlignment(.center)
-                            Button {
-                                viewModel.removeCondition(applied)
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                            .buttonStyle(.plain)
-                        }
+                        ConditionTag(
+                            text: viewModel.conditionTagText(for: applied, allConditions: allConditions),
+                            description: viewModel.conditionDescription(for: applied, allConditions: allConditions),
+                            color: .orange,
+                            value: valueBinding(for: applied),
+                            onDelete: { viewModel.removeCondition(applied) })
                     }
                 }
             }

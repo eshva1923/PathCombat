@@ -12,6 +12,7 @@ struct EntityPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var libraryEntities: [CombatEntity]
     let isAddable: (CombatEntity) -> Bool
+    let countInEncounter: (CombatEntity) -> Int
     let onAdd: (CombatEntity) -> Void
 
     @State private var selectedEntityID: UUID?
@@ -74,12 +75,18 @@ struct EntityPickerSheet: View {
             selectedEntityID = entity.id
         } label: {
             HStack {
+                if let roleIcon = entity.role.icon {
+                    Image(systemName: roleIcon)
+                }
                 Text(entity.name)
                     .fontWeight(.semibold)
+                if entity.role != .pc && entity.role != .boss {
+                    LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary, imageName: nil, hoverEffect: false, hoverColor: nil)
+                }
                 Spacer()
                 HStack {
                     ForEach(entity.tags, id: \.self) { tag in
-                        LabelTag(text: tag, color: .entityTagColor(for: tag), imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
                     LabelTag(text: "Level \(entity.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
@@ -115,6 +122,6 @@ struct EntityPickerSheet: View {
         name: "Goblin Scout", id: nil, tags: ["Goblin"], level: 1, iniMod: 4,
         currentIni: nil, hp: 12, wounds: nil, currentConditions: nil,
         ac: 14, fortST: 2, refST: 4, willST: 1, dc: 12))
-    return EntityPickerSheet(isAddable: { _ in true }, onAdd: { _ in })
+    return EntityPickerSheet(isAddable: { _ in true }, countInEncounter: { _ in 0 }, onAdd: { _ in })
         .modelContainer(container)
 }

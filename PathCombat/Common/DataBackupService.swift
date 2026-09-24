@@ -12,18 +12,19 @@ enum DataBackupError: LocalizedError {
     }
 }
 
-/// Exports/imports the whole SwiftData store (conditions, entities, encounters) as a single
-/// multi-section CSV file: each section starts with a "#Marker" line, followed by a header
-/// row and its data rows.
+/// Exports/imports the whole SwiftData store (conditions, entity templates, encounter-owned
+/// entity copies, encounters) as a single multi-section CSV file: each section starts with a
+/// "#Marker" line, followed by a header row and its data rows.
 enum DataBackupService {
     private static let conditionsMarker = "#Conditions"
     private static let entitiesMarker = "#Entities"
+    private static let encounterEntitiesMarker = "#EncounterEntities"
     private static let encountersMarker = "#Encounters"
 
     private static let conditionsHeader = ["id", "name", "details"]
-    private static let entitiesHeader = [
+    private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
-        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc"
+        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role"
     ]
     private static let encountersHeader = [
         "id", "name", "date", "completed", "currentInitiative", "elapsedCombatRounds",
@@ -35,6 +36,7 @@ enum DataBackupService {
     static func exportCSV(context: ModelContext) throws -> String {
         let conditions = try context.fetch(FetchDescriptor<Condition>())
         let entities = try context.fetch(FetchDescriptor<CombatEntity>())
+        let encounterEntities = try context.fetch(FetchDescriptor<EncounterCombatEntity>())
         let encounters = try context.fetch(FetchDescriptor<Encounter>())
 
         var lines: [String] = []
@@ -47,25 +49,16 @@ enum DataBackupService {
         lines.append("")
 
         lines.append(entitiesMarker)
-        lines.append(CSVWriter.row(entitiesHeader))
+        lines.append(CSVWriter.row(entityStatsHeader))
         for entity in entities {
-            lines.append(CSVWriter.row([
-                entity.id.uuidString,
-                entity.name,
-                entity.tags.joined(separator: ";"),
-                String(entity.level),
-                String(entity.iniMod),
-                String(entity.currentIni),
-                String(entity.hp),
-                String(entity.wounds),
-                entity.currentConditions.joined(separator: ";"),
-                encode(entity.affectingConditions),
-                String(entity.ac),
-                String(entity.fortST),
-                String(entity.refST),
-                String(entity.willST),
-                String(entity.dc)
-            ]))
+            lines.append(CSVWriter.row(entityStatsRow(for: entity)))
+        }
+        lines.append("")
+
+        lines.append(encounterEntitiesMarker)
+        lines.append(CSVWriter.row(entityStatsHeader))
+        for entity in encounterEntities {
+            lines.append(CSVWriter.row(entityStatsRow(for: entity)))
         }
         lines.append("")
 
@@ -87,11 +80,35 @@ enum DataBackupService {
         return lines.joined(separator: "\n")
     }
 
+    static func wipeEncounters(context: ModelContext) throws {
+        try context.delete(model: Encounter.self)
+        try context.save()
+    }
+
+    static func wipeEntities(context: ModelContext) throws {
+        try context.delete(model: CombatEntity.self)
+        try context.save()
+    }
+
+    static func wipeConditions(context: ModelContext) throws {
+        try context.delete(model: Condition.self)
+        try context.save()
+    }
+
+    static func wipeAll(context: ModelContext) throws {
+        try context.delete(model: Encounter.self)
+        try context.delete(model: EncounterCombatEntity.self)
+        try context.delete(model: CombatEntity.self)
+        try context.delete(model: Condition.self)
+        try context.save()
+    }
+
     /// Deletes all existing encounters, entities, and conditions, then recreates them from the CSV.
     static func importCSV(_ text: String, context: ModelContext) throws {
         let sections = try parseSections(text)
 
         try context.delete(model: Encounter.self)
+        try context.delete(model: EncounterCombatEntity.self)
         try context.delete(model: CombatEntity.self)
         try context.delete(model: Condition.self)
 
@@ -100,32 +117,21 @@ enum DataBackupService {
             context.insert(Condition(name: row[1], id: id, description: row[2]))
         }
 
-        var entitiesByID: [UUID: CombatEntity] = [:]
         for row in sections[entitiesMarker] ?? [] {
-            guard row.count >= 15, let id = UUID(uuidString: row[0]) else { continue }
-            let entity = CombatEntity(
-                name: row[1],
-                id: id,
-                tags: splitList(row[2]),
-                level: Int(row[3]),
-                iniMod: Int(row[4]),
-                currentIni: Int(row[5]),
-                hp: Int(row[6]),
-                wounds: Int(row[7]),
-                currentConditions: splitList(row[8]),
-                ac: Int(row[10]),
-                fortST: Int(row[11]),
-                refST: Int(row[12]),
-                willST: Int(row[13]),
-                dc: Int(row[14]),
-                affectingConditions: decodeAppliedConditions(row[9]))
+            guard let entity = parseCombatEntity(from: row) else { continue }
             context.insert(entity)
-            entitiesByID[id] = entity
+        }
+
+        var encounterEntitiesByID: [UUID: EncounterCombatEntity] = [:]
+        for row in sections[encounterEntitiesMarker] ?? [] {
+            guard let id = row.first.flatMap(UUID.init(uuidString:)), let entity = parseEncounterCombatEntity(from: row) else { continue }
+            context.insert(entity)
+            encounterEntitiesByID[id] = entity
         }
 
         for row in sections[encountersMarker] ?? [] {
             guard row.count >= 8, let id = UUID(uuidString: row[0]) else { continue }
-            let combatEntities = splitList(row[7]).compactMap { UUID(uuidString: $0) }.compactMap { entitiesByID[$0] }
+            let combatEntities = splitList(row[7]).compactMap { UUID(uuidString: $0) }.compactMap { encounterEntitiesByID[$0] }
             context.insert(Encounter(
                 name: row[1],
                 id: id,
@@ -138,6 +144,69 @@ enum DataBackupService {
         }
 
         try context.save()
+    }
+
+    private static func entityStatsRow(for entity: CombatEntityStats) -> [String] {
+        [
+            entity.id.uuidString,
+            entity.name,
+            entity.tags.joined(separator: ";"),
+            String(entity.level),
+            String(entity.iniMod),
+            String(entity.currentIni),
+            String(entity.hp),
+            String(entity.wounds),
+            entity.currentConditions.joined(separator: ";"),
+            encode(entity.affectingConditions),
+            String(entity.ac),
+            String(entity.fortST),
+            String(entity.refST),
+            String(entity.willST),
+            String(entity.dc),
+            entity.role.rawValue
+        ]
+    }
+
+    private static func parseCombatEntity(from row: [String]) -> CombatEntity? {
+        guard row.count >= 15, let id = UUID(uuidString: row[0]) else { return nil }
+        return CombatEntity(
+            name: row[1],
+            id: id,
+            tags: splitList(row[2]),
+            level: Int(row[3]),
+            iniMod: Int(row[4]),
+            currentIni: Int(row[5]),
+            hp: Int(row[6]),
+            wounds: Int(row[7]),
+            currentConditions: splitList(row[8]),
+            ac: Int(row[10]),
+            fortST: Int(row[11]),
+            refST: Int(row[12]),
+            willST: Int(row[13]),
+            dc: Int(row[14]),
+            affectingConditions: decodeAppliedConditions(row[9]),
+            role: row.count >= 16 ? CombatRole(rawValue: row[15]) : nil)
+    }
+
+    private static func parseEncounterCombatEntity(from row: [String]) -> EncounterCombatEntity? {
+        guard row.count >= 15, let id = UUID(uuidString: row[0]) else { return nil }
+        return EncounterCombatEntity(
+            id: id,
+            name: row[1],
+            level: Int(row[3]) ?? 1,
+            iniMod: Int(row[4]) ?? 0,
+            currentIni: Int(row[5]) ?? 0,
+            hp: Int(row[6]) ?? 0,
+            wounds: Int(row[7]) ?? 0,
+            tags: splitList(row[2]),
+            currentConditions: splitList(row[8]),
+            affectingConditions: decodeAppliedConditions(row[9]),
+            ac: Int(row[10]) ?? 10,
+            fortST: Int(row[11]) ?? 0,
+            refST: Int(row[12]) ?? 0,
+            willST: Int(row[13]) ?? 0,
+            dc: Int(row[14]) ?? 10,
+            role: row.count >= 16 ? (CombatRole(rawValue: row[15]) ?? .attacker) : .attacker)
     }
 
     private static func splitList(_ value: String) -> [String] {
@@ -162,7 +231,7 @@ enum DataBackupService {
     }
 
     private static func parseSections(_ text: String) throws -> [String: [[String]]] {
-        let markers = [conditionsMarker, entitiesMarker, encountersMarker]
+        let markers = [conditionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
         let rows = CSVParser.parseRows(text)
 
         var sections: [String: [[String]]] = [:]
