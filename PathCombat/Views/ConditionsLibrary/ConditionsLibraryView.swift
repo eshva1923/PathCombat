@@ -55,6 +55,11 @@ struct ConditionsLibraryView: View {
                 columnVisibility = .all
             }
         }
+        .onAppear {
+            if selectedConditionID == nil {
+                selectedConditionID = conditions.first?.id
+            }
+        }
     }
 }
 
@@ -95,7 +100,8 @@ extension ConditionsLibraryView {
 
     var addConditionRow: some View {
         Button {
-            viewModel.addCondition(using: modelContext)
+            let newCondition = viewModel.addCondition(using: modelContext)
+            selectedConditionID = newCondition.id
         } label: {
             HStack {
                 Spacer()

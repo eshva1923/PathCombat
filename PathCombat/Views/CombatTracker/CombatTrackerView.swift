@@ -54,6 +54,11 @@ struct CombatTrackerView: View {
                 columnVisibility = .all
             }
         }
+        .onAppear {
+            if selectedEncounterID == nil {
+                selectedEncounterID = encounters.first?.id
+            }
+        }
     }
 }
 
@@ -94,7 +99,8 @@ extension CombatTrackerView {
 
     var addEncounterRow: some View {
         Button {
-            viewModel.addEncounter(using: modelContext)
+            let newEncounter = viewModel.addEncounter(using: modelContext)
+            selectedEncounterID = newEncounter.id
         } label: {
             HStack {
                 Spacer()

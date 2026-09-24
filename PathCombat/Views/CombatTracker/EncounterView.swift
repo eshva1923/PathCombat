@@ -7,10 +7,12 @@ struct EncounterView: View {
     @Bindable var encounter: Encounter
     @State private var viewModel: EncounterViewModel
     @State private var isShowingEntityPicker = false
+    @State private var selectedEntityID: UUID?
 
     init(encounter: Encounter) {
         self.encounter = encounter
         self._viewModel = State(initialValue: EncounterViewModel(encounter: encounter))
+        self._selectedEntityID = State(initialValue: encounter.actingEntity)
     }
 
     var body: some View {
@@ -24,19 +26,25 @@ struct EncounterView: View {
                         VStack {
                             ForEach(encounter.combatEntities) { entity in
                                 VStack {
-                                    CombatEntityView(combatEntity: entity)
-                                    
-                                    Button {
-                                        viewModel.deleteEntity(entity)
-                                    } label: {
-                                        HStack {
-                                            Text("Remove this entity")
-                                            Image(systemName: "trash")
+                                    CombatEntityView(combatEntity: entity, isCollapsed: entity.id != selectedEntityID)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            selectedEntityID = entity.id
                                         }
-                                        .padding(.horizontal)
-                                        .padding(.vertical, 8)
+
+                                    if selectedEntityID == entity.id {
+                                        Button {
+                                            viewModel.deleteEntity(entity)
+                                        } label: {
+                                            HStack {
+                                                Text("Remove this entity")
+                                                Image(systemName: "trash")
+                                            }
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+                                        }
+                                        .padding(.vertical)
                                     }
-                                    .padding(.vertical)
                                 }
                                 .padding(4)
                                 .background(entity.isDead ? Color.black.opacity(0.3) : Color.clear)
@@ -69,6 +77,7 @@ struct EncounterView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onChange(of: encounter.actingEntity) { _, newValue in
                 guard let newValue else { return }
+                selectedEntityID = newValue
                 withAnimation {
                     proxy.scrollTo(newValue, anchor: .top)
                 }
@@ -136,6 +145,7 @@ extension EncounterView {
     private func initiativeRow(_ entity: EncounterCombatEntity, proxy: ScrollViewProxy) -> some View {
         VStack(alignment: .leading) {
             Button {
+                selectedEntityID = entity.id
                 withAnimation {
                     proxy.scrollTo(entity.id, anchor: .top)
                 }

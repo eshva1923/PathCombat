@@ -17,9 +17,12 @@ struct EntityPickerSheet: View {
 
     @State private var selectedEntityID: UUID?
     @State private var hoveredEntityID: UUID?
+    @State private var searchText = ""
 
     private var availableEntities: [CombatEntity] {
-        libraryEntities.sorted { $0.level > $1.level }
+        libraryEntities
+            .filter { $0.matchesSearch(searchText) }
+            .sorted { $0.level > $1.level }
     }
 
     private var selectedEntity: CombatEntity? {
@@ -33,10 +36,27 @@ struct EntityPickerSheet: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding()
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search by name, level, tag, or role", text: $searchText)
+                    .textFieldStyle(.plain)
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
             Divider()
             if availableEntities.isEmpty {
                 Spacer()
-                Text("No entities available in the library")
+                Text(searchText.isEmpty ? "No entities available in the library" : "No entities match \"\(searchText)\"")
                     .foregroundStyle(.secondary)
                 Spacer()
             } else {

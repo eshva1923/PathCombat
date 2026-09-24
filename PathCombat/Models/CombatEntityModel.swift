@@ -26,12 +26,12 @@ final class CombatEntity: Equatable {
     var willST: Int
     var dc: Int
     var role: CombatRole
-    //var actions: [CombatAction] = []
+    var actions: [CombatAction]
 
 
     init(name: String?, id: UUID?, tags: [String]?, level: Int?, iniMod: Int?, currentIni: Int?, hp: Int?, wounds: Int?,
          currentConditions: [String]?, ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?,
-         affectingConditions: [AppliedCondition]? = nil, role: CombatRole? = nil) {
+         affectingConditions: [AppliedCondition]? = nil, role: CombatRole? = nil, actions: [CombatAction]? = nil) {
         self.name = name ?? "Unnamed combatent"
         self.id = id ?? UUID()
         self.tags = tags ?? []
@@ -48,6 +48,7 @@ final class CombatEntity: Equatable {
         self.willST = willST ?? 0
         self.dc = dc ?? 10
         self.role = role ?? .attacker
+        self.actions = actions ?? [CombatAction.defaultMelee()]
     }
 
     /// Creates an independent per-encounter copy (a fresh identity and reset combat state)
@@ -69,7 +70,20 @@ final class CombatEntity: Equatable {
             refST: refST,
             willST: willST,
             dc: dc,
-            role: role)
+            role: role,
+            actions: actions)
+    }
+
+    /// Matches if `query` is empty, or is contained in the name/role, equals the level exactly,
+    /// or is contained in any tag (all case-insensitive).
+    func matchesSearch(_ query: String) -> Bool {
+        guard !query.isEmpty else { return true }
+        let lowered = query.lowercased()
+        if name.lowercased().contains(lowered) { return true }
+        if let level = Int(query), self.level == level { return true }
+        if tags.contains(where: { $0.lowercased().contains(lowered) }) { return true }
+        if role.displayName.lowercased().contains(lowered) { return true }
+        return false
     }
 
     static func new() -> CombatEntity {

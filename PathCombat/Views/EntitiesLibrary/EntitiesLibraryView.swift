@@ -15,6 +15,7 @@ struct EntitiesLibraryView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var hoveredEntityID: UUID?
     @State private var selectedEntityID: UUID?
+    @State private var searchText = ""
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -22,15 +23,23 @@ struct EntitiesLibraryView: View {
         static let maxSplitViewWidth = 220.0
     }
 
+    private var filteredEntities: [CombatEntity] {
+        entities.filter { $0.matchesSearch(searchText) }
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            ScrollView(.vertical) {
-                VStack(spacing: 0) {
-                    ForEach(entities) { entity in
-                        entityRow(entity)
-                        Divider()
+            VStack(spacing: 0) {
+                searchField
+                Divider()
+                ScrollView(.vertical) {
+                    VStack(spacing: 0) {
+                        ForEach(filteredEntities) { entity in
+                            entityRow(entity)
+                            Divider()
+                        }
+                        addEntityRow
                     }
-                    addEntityRow
                 }
             }
             .navigationSplitViewColumnWidth(
@@ -58,10 +67,35 @@ struct EntitiesLibraryView: View {
                 columnVisibility = .all
             }
         }
+        .onAppear {
+            if selectedEntityID == nil {
+                selectedEntityID = entities.first?.id
+            }
+        }
     }
 }
 
 extension EntitiesLibraryView {
+    private var searchField: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search by name, level, tag, or role", text: $searchText)
+                .textFieldStyle(.plain)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
+
     private func entityRow(_ entity: CombatEntity) -> some View {
         HStack {
             Button {
@@ -107,7 +141,8 @@ extension EntitiesLibraryView {
 
     var addEntityRow: some View {
         Button {
-            viewModel.addEntity(using: modelContext)
+            let newEntity = viewModel.addEntity(using: modelContext)
+            selectedEntityID = newEntity.id
         } label: {
             HStack {
                 Spacer()

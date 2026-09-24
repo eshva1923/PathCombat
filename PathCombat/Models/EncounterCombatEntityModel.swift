@@ -22,10 +22,11 @@ final class EncounterCombatEntity: Equatable {
     var willST: Int
     var dc: Int
     var role: CombatRole
+    var actions: [CombatAction]
 
     init(id: UUID?, name: String, level: Int, iniMod: Int, currentIni: Int, hp: Int, wounds: Int,
          tags: [String], currentConditions: [String], affectingConditions: [AppliedCondition],
-         ac: Int, fortST: Int, refST: Int, willST: Int, dc: Int, role: CombatRole) {
+         ac: Int, fortST: Int, refST: Int, willST: Int, dc: Int, role: CombatRole, actions: [CombatAction]) {
         self.id = id ?? UUID()
         self.name = name
         self.level = level
@@ -42,6 +43,7 @@ final class EncounterCombatEntity: Equatable {
         self.willST = willST
         self.dc = dc
         self.role = role
+        self.actions = actions
     }
 }
 

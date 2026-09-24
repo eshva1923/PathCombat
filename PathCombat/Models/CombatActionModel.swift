@@ -6,29 +6,71 @@
 //
 
 import Foundation
-import SwiftData
-/*
-@Model
-final class CombatAction {
-    var name: String
-    var abstract: String?
-    var toHitModifier: Int = 0
-    var damageDieRaw: String?
-    var damageModifier: Int = 0
-    var traits: [String] = []
-    var actions: Int = 1
-    
-    init(name: String) {
-        self.name = name
-    }
-    
-    func rollToHit() -> Int {
-        DieType.d20.roll() + toHitModifier
-    }
-    
-    func rollDamage() -> Int {
-        guard let damageDieRaw else { return 0 }
-        return DieSet.init(fromString: damageDieRaw).roll() + (damageModifier)
+
+enum ActionTarget: String, Codable, CaseIterable, Identifiable {
+    case ac = "AC"
+    case fortitudeSave
+    case reflexSave
+    case willSave
+
+    var id: Self { self }
+
+    var displayName: String {
+        switch self {
+        case .ac: "AC"
+        case .fortitudeSave: "Fortitude Save"
+        case .reflexSave: "Reflex Save"
+        case .willSave: "Will Save"
+        }
     }
 }
-*/
+
+struct CombatAction: Codable, Identifiable, Hashable {
+    var id: UUID
+    var name: String
+    var speed: Int
+    var desc: String
+    var target: ActionTarget
+    var toHit: Int
+    var damage: String
+
+    init(id: UUID = UUID(), name: String, speed: Int = 1, desc: String = "",
+         target: ActionTarget = .ac, toHit: Int = 0, damage: String = "") {
+        self.id = id
+        self.name = name
+        self.speed = speed
+        self.desc = desc
+        self.target = target
+        self.toHit = toHit
+        self.damage = damage
+    }
+
+    static func defaultMelee() -> CombatAction {
+        CombatAction(name: "Melee")
+    }
+
+    /// All valid speed values: -1 is a reaction, 0 is a free action, 1-3 are regular actions.
+    static let speedValues = [-1, 0, 1, 2, 3]
+
+    static func speedSymbol(for speed: Int) -> String {
+        switch speed {
+        case -1: "􀅉"
+        case 1: "􀋁"
+        case 2: "􀋁􀋁"
+        case 3: "􀋁􀋁􀋁"
+        default: "􀋀"
+        }
+    }
+    
+    static func displayText(for speed: Int) -> String {
+        switch speed {
+        case -1: "Reaction"
+        case 1: "Single action"
+        case 2: "Two actions"
+        case 3: "Three actions"
+        default: "Free action"
+        }
+    }
+    var displayText: String { Self.displayText(for: speed) }
+    var speedSymbol: String { Self.speedSymbol(for: speed) }
+}

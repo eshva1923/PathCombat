@@ -60,4 +60,12 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
     }
+
+    func addAction() {
+        combatEntity.actions.append(CombatAction(name: "New Action"))
+    }
+
+    func removeAction(_ action: CombatAction) {
+        combatEntity.actions.removeAll(where: { $0.id == action.id })
+    }
 }

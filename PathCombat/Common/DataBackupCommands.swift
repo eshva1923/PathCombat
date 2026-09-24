@@ -49,35 +49,39 @@ enum DataBackupCommands {
         confirmAndWipe(
             title: "Wipe all encounters?",
             message: "This will permanently delete every encounter. Entities and conditions are not affected.",
-            context: context,
-            wipe: DataBackupService.wipeEncounters)
+            context: context) { context in
+                try DataBackupService.wipeEncounters(context: context)
+            }
     }
 
     static func wipeEntities(context: ModelContext) {
         confirmAndWipe(
             title: "Wipe all entities?",
             message: "This will permanently delete every entity in the library, including any copies currently in encounters.",
-            context: context,
-            wipe: DataBackupService.wipeEntities)
+            context: context) { context in
+                try DataBackupService.wipeEntities(context: context)
+            }
     }
 
     static func wipeConditions(context: ModelContext) {
         confirmAndWipe(
             title: "Wipe all conditions?",
             message: "This will permanently delete every condition definition, and remove any applied conditions that reference them.",
-            context: context,
-            wipe: DataBackupService.wipeConditions)
+            context: context) { context in
+                try DataBackupService.wipeConditions(context: context)
+            }
     }
 
     static func wipeAll(context: ModelContext) {
         confirmAndWipe(
             title: "Wipe all data?",
             message: "This will permanently delete every encounter, entity, and condition.",
-            context: context,
-            wipe: DataBackupService.wipeAll)
+            context: context) { context in
+                try DataBackupService.wipeAll(context: context)
+            }
     }
 
-    private static func confirmAndWipe(title: String, message: String, context: ModelContext, wipe: (ModelContext) throws -> Void) {
+    private static func confirmAndWipe(title: String, message: String, context: ModelContext, wipe: @MainActor (ModelContext) throws -> Void) {
         let confirmation = NSAlert()
         confirmation.messageText = title
         confirmation.informativeText = message

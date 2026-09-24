@@ -24,7 +24,7 @@ enum DataBackupService {
     private static let conditionsHeader = ["id", "name", "details"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
-        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role"
+        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions"
     ]
     private static let encountersHeader = [
         "id", "name", "date", "completed", "currentInitiative", "elapsedCombatRounds",
@@ -163,7 +163,8 @@ enum DataBackupService {
             String(entity.refST),
             String(entity.willST),
             String(entity.dc),
-            entity.role.rawValue
+            entity.role.rawValue,
+            encodeActions(entity.actions)
         ]
     }
 
@@ -185,7 +186,8 @@ enum DataBackupService {
             willST: Int(row[13]),
             dc: Int(row[14]),
             affectingConditions: decodeAppliedConditions(row[9]),
-            role: row.count >= 16 ? CombatRole(rawValue: row[15]) : nil)
+            role: row.count >= 16 ? CombatRole(rawValue: row[15]) : nil,
+            actions: row.count >= 17 ? decodeActions(row[16]) : nil)
     }
 
     private static func parseEncounterCombatEntity(from row: [String]) -> EncounterCombatEntity? {
@@ -206,7 +208,8 @@ enum DataBackupService {
             refST: Int(row[12]) ?? 0,
             willST: Int(row[13]) ?? 0,
             dc: Int(row[14]) ?? 10,
-            role: row.count >= 16 ? (CombatRole(rawValue: row[15]) ?? .attacker) : .attacker)
+            role: row.count >= 16 ? (CombatRole(rawValue: row[15]) ?? .attacker) : .attacker,
+            actions: row.count >= 17 ? decodeActions(row[16]) : [])
     }
 
     private static func splitList(_ value: String) -> [String] {
@@ -217,6 +220,18 @@ enum DataBackupService {
         applied
             .map { "\($0.id.uuidString)|\($0.conditionID.uuidString)|\($0.value.map(String.init) ?? "")" }
             .joined(separator: ";")
+    }
+
+    /// Actions contain free text (name/desc/damage), which can't safely use the pipe/semicolon
+    /// scheme used for `AppliedCondition`, so they're JSON-encoded into a single CSV field instead.
+    private static func encodeActions(_ actions: [CombatAction]) -> String {
+        guard let data = try? JSONEncoder().encode(actions) else { return "[]" }
+        return String(data: data, encoding: .utf8) ?? "[]"
+    }
+
+    private static func decodeActions(_ value: String) -> [CombatAction] {
+        guard !value.isEmpty, let data = value.data(using: .utf8) else { return [] }
+        return (try? JSONDecoder().decode([CombatAction].self, from: data)) ?? []
     }
 
     private static func decodeAppliedConditions(_ value: String) -> [AppliedCondition] {

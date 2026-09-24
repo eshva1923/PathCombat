@@ -16,6 +16,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     @State private var tagsText: String
     @State private var isShowingConditionPicker = false
     let isTemplate: Bool
+    let isCollapsed: Bool
 
     let formatter: NumberFormatter = {
             let formatter = NumberFormatter()
@@ -23,9 +24,10 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             return formatter
     }()
 
-    init(combatEntity: Entity, isTemplate: Bool = false) {
+    init(combatEntity: Entity, isTemplate: Bool = false, isCollapsed: Bool = false) {
         self.combatEntity = combatEntity
         self.isTemplate = isTemplate
+        self.isCollapsed = isCollapsed
         self._viewModel = State(initialValue: CombatEntityViewModel(combatEntity: combatEntity))
         self._tagsText = State(initialValue: combatEntity.tags.joined(separator: ", "))
     }
@@ -38,6 +40,8 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }.font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
+                levelTag
+                roleField
                 if !combatEntity.affectingConditions.isEmpty {
                     Image(systemName: "figure.walk.triangle.fill")
                         .foregroundStyle(.orange)
@@ -47,29 +51,29 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }
             }
             .padding(.vertical)
-            HStack{
-                roleField
-                levelTag
-            }.padding()
-            if isTemplate {
-                tagsField
-            } else {
-                HStack{
-                    ForEach (combatEntity.tags, id: \.self) {tag in
-                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+
+            if !isCollapsed {
+                if isTemplate {
+                    tagsField
+                } else {
+                    HStack{
+                        ForEach (combatEntity.tags, id: \.self) {tag in
+                            LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                        }
                     }
                 }
-            }
-            StatRow
-                HStack {
-                    if !isTemplate {
-                        initiativeSection
-                    }
-                    hpSection
-                    
-                }.padding(.horizontal, 10)
-            if !isTemplate {
-                conditionsSection
+                StatRow
+                    HStack {
+                        if !isTemplate {
+                            initiativeSection
+                        }
+                        hpSection
+
+                    }.padding(.horizontal, 10)
+                if !isTemplate {
+                    conditionsSection
+                }
+                actionsSection
             }
         }
         .padding(.horizontal)
@@ -201,6 +205,108 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 viewModel.addCondition(condition, value: value)
             }
         }
+    }
+
+    var actionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Actions")
+                    .fontWeight(.bold)
+                Spacer()
+                if isTemplate {
+                    Button {
+                        viewModel.addAction()
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(combatEntity.actions) { action in
+                    actionRow(action)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.elementBackground.opacity(0.25))
+        .cornerRadius(8)
+        .padding(.horizontal, 10)
+    }
+
+    private func actionRow(_ action: CombatAction) -> some View {
+        let binding = actionBinding(for: action)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                if isTemplate {
+                    TextField("Name", text: binding.name)
+                        .fontWeight(.bold)
+                } else {
+                    Text(action.name)
+                        .fontWeight(.bold)
+                }
+                Spacer()
+                if isTemplate {
+                    Picker("Speed", selection: binding.speed) {
+                        ForEach(CombatAction.speedValues, id: \.self) { speed in
+                            Text(CombatAction.displayText(for: speed) + " " + CombatAction.speedSymbol(for: speed)).tag(speed)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 140)
+                    Button {
+                        viewModel.removeAction(action)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text(action.speedSymbol)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            HStack {
+                if isTemplate {
+                    Picker("Target", selection: binding.target) {
+                        ForEach(ActionTarget.allCases) { target in
+                            Text(target.displayName).tag(target)
+                        }
+                    }
+                    .labelsHidden()
+                    Text("To Hit")
+                    TextField(value: binding.toHit, formatter: formatter) {
+                        EmptyView()
+                    }
+                    .frame(width: 40)
+                    TextField("Damage (e.g. 2d6+4)", text: binding.damage)
+                } else {
+                    Text("+\(action.toHit) vs \(action.target.displayName)")
+                        .foregroundStyle(.secondary)
+                    Text(action.damage)
+                        .fontWeight(.semibold)
+                }
+            }
+            if isTemplate {
+                TextField("Description", text: binding.desc)
+                    .font(.caption)
+            } else if !action.desc.isEmpty {
+                Text(action.desc)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(6)
+        .background(Color.secondary.opacity(0.08))
+        .cornerRadius(6)
+    }
+
+    private func actionBinding(for action: CombatAction) -> Binding<CombatAction> {
+        Binding(
+            get: { combatEntity.actions.first(where: { $0.id == action.id }) ?? action },
+            set: { newValue in
+                guard let index = combatEntity.actions.firstIndex(where: { $0.id == action.id }) else { return }
+                combatEntity.actions[index] = newValue
+            }
+        )
     }
 
     private func valueBinding(for applied: AppliedCondition) -> Binding<String> {
