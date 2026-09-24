@@ -7,24 +7,6 @@
 
 import Foundation
 
-enum ActionTarget: String, Codable, CaseIterable, Identifiable {
-    case ac = "AC"
-    case fortitudeSave
-    case reflexSave
-    case willSave
-
-    var id: Self { self }
-
-    var displayName: String {
-        switch self {
-        case .ac: "AC"
-        case .fortitudeSave: "Fortitude Save"
-        case .reflexSave: "Reflex Save"
-        case .willSave: "Will Save"
-        }
-    }
-}
-
 struct CombatAction: Codable, Identifiable, Hashable {
     var id: UUID
     var name: String
