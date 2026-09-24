@@ -25,13 +25,18 @@ struct EncounterView: View {
                             ForEach(encounter.combatEntities) { entity in
                                 VStack {
                                     CombatEntityView(combatEntity: entity)
-                                    HStack {
-                                        Button {
-                                            viewModel.deleteEntity(entity)
-                                        } label: {
+                                    
+                                    Button {
+                                        viewModel.deleteEntity(entity)
+                                    } label: {
+                                        HStack {
+                                            Text("Remove this entity")
                                             Image(systemName: "trash")
                                         }
+                                        .padding(.horizontal)
+                                        .padding(.vertical, 8)
                                     }
+                                    .padding(.vertical)
                                 }
                                 .padding(4)
                                 .background(entity.isDead ? Color.black.opacity(0.3) : Color.clear)
@@ -129,9 +134,6 @@ extension EncounterView {
     }
 
     private func initiativeRow(_ entity: EncounterCombatEntity, proxy: ScrollViewProxy) -> some View {
-        // The condition tags have their own tap gesture (to open the detail sheet); nesting
-        // that inside this row's scroll-to-entity Button breaks the List row's click handling
-        // on macOS, so the tags are a sibling of the button rather than inside its label.
         VStack(alignment: .leading) {
             Button {
                 withAnimation {

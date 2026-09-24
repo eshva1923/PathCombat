@@ -38,8 +38,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }.font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
-                Image(systemName: "figure.stand")
-                levelTag
                 if !combatEntity.affectingConditions.isEmpty {
                     Image(systemName: "figure.walk.triangle.fill")
                         .foregroundStyle(.orange)
@@ -49,7 +47,10 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }
             }
             .padding(.vertical)
-            roleField
+            HStack{
+                roleField
+                levelTag
+            }.padding()
             if isTemplate {
                 tagsField
             } else {
@@ -191,6 +192,9 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }
             }
         }
+        .padding(10)
+        .background(Color.elementBackground.opacity(0.25))
+        .cornerRadius(8)
         .padding(.horizontal, 10)
         .sheet(isPresented: $isShowingConditionPicker) {
             ConditionPickerSheet(excludedConditionIDs: Set(combatEntity.affectingConditions.map(\.conditionID))) { condition, value in
@@ -250,7 +254,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 LabelStat(
                     text: "DC",
                     value: $combatEntity.dc,
-                    imageName: "dot.scope",
+                    imageName: "hurricane",
                     hoverEffect: false,
                     hoverColor: nil,
                     isEditable: isTemplate)
