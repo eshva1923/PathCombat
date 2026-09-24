@@ -174,7 +174,7 @@ struct LabelStat: View {
         .onHover { hovering in
             guard hoverEffect else { return }
             let hoveringColor = hoverColor ?? Color.secondary
-            backgroundColor = hovering ? hoveringColor : Color.clear
+            backgroundColor = hovering ? hoveringColor.opacity(0.25) : Color.clear
         }
     }
 }

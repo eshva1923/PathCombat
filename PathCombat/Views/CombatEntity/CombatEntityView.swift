@@ -343,7 +343,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             LabelStat(
                 text: "Perception",
                 value: $combatEntity.iniMod,
-                imageName: "bolt",
+                imageName: "eye",
                 hoverEffect: true,
                 hoverColor: Color.orange,
                 isEditable: isTemplate)
