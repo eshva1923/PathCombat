@@ -37,8 +37,7 @@ struct EntityPickerSheet: View {
                 .fontWeight(.bold)
                 .padding()
             HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                Icons.search.foregroundStyle(.secondary)
                 TextField("Search by name, level, tag, or role", text: $searchText)
                     .textFieldStyle(.plain)
                 if !searchText.isEmpty {

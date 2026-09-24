@@ -135,10 +135,10 @@ struct ConditionTag: View {
 struct LabelStat: View {
     let text: String
     @Binding var value: Int
-    let imageName: String
     let hoverEffect: Bool
     let hoverColor: Color?
     var isEditable: Bool = true
+    let image: Image?
 
     @State var backgroundColor = Color.clear
 
@@ -166,7 +166,9 @@ struct LabelStat: View {
                 Text(text)
             }
         } icon: {
-            Image(systemName: imageName)
+            if let image {
+                image
+            }
         }
         .padding(4)
         .background(backgroundColor)

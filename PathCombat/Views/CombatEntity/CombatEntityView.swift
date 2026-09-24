@@ -36,15 +36,14 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         Group {
             HStack{
                 TextField(text: $combatEntity.name) {
-                    Image(systemName: "figure.stand")
+                    Icons.character
                 }.font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
                 levelTag
                 roleField
                 if !combatEntity.affectingConditions.isEmpty {
-                    Image(systemName: "figure.walk.triangle.fill")
-                        .foregroundStyle(.orange)
+                    Icons.affectedByConditions.foregroundStyle(.orange)
                 }
                 if combatEntity.isDead {
                     deadIcon
@@ -94,7 +93,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
 
     var roleField: some View {
         HStack {
-            Image(systemName: "person.fill.badge.plus")
+            Icons.addRole
             Picker("Role", selection: $combatEntity.role) {
                 ForEach(CombatRole.allCases) { role in
                     Text(role.displayName).tag(role)
@@ -120,19 +119,19 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     
     var initiativeSection: some View {
         HStack {
-            Image(systemName: "figure.run")
+            Icons.initiative
             Text("Initiative")
                 .fontWeight(.bold)
             TextField(value: $combatEntity.currentIni,
                       formatter: formatter) {
-                Image(systemName: "figure.run")
+                Icons.initiative
             }.fontWeight(.bold)
             Button {
                 viewModel.rollInitiative()
             } label: {
                 HStack {
                     Text("Roll Initiative")
-                    Image(systemName: "figure.run.circle")
+                    Icons.rollInitiative
                 }
             }.frame(maxWidth: .infinity)
         }
@@ -140,21 +139,21 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     
     var hpSection: some View {
             HStack {
-                Image(systemName: "heart.fill")
+                Icons.hp
                 Text("HP")
                     .fontWeight(.bold)
                 TextField(value: $combatEntity.hp,
                           formatter: formatter) {
-                    Image(systemName: "heart.fill")
+                    Icons.hp
                 }.fontWeight(.bold)
                 if !isTemplate {
                     Spacer()
-                    Image(systemName: "bandage.fill")
+                    Icons.wounds
                     Text("Wounds")
                         .fontWeight(.medium)
                     TextField(value: $combatEntity.wounds,
                               formatter: formatter) {
-                        Image(systemName: "bandage.fill")
+                        Icons.wounds
                     }.fontWeight(.medium)
                 }
             }
@@ -162,7 +161,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     }
 
     var deadIcon: some View {
-        Image(systemName: "figure.teen")
+        Icons.dead
             .frame(width: 16, height: 16)
             .rotationEffect(.degrees(90))
             .foregroundStyle(.red)
@@ -177,7 +176,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 Button {
                     isShowingConditionPicker = true
                 } label: {
-                    Image(systemName: "plus")
+                    Icons.add
                 }
             }
             if combatEntity.affectingConditions.isEmpty {
@@ -217,7 +216,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     Button {
                         viewModel.addAction()
                     } label: {
-                        Image(systemName: "plus")
+                        Icons.add
                     }
                 }
             }
@@ -322,48 +321,48 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             LabelStat(
                 text: "Fortitude",
                 value: $combatEntity.fortST,
-                imageName: "figure.boxing",
                 hoverEffect: true,
                 hoverColor: nil,
-                isEditable: isTemplate)
+                isEditable: isTemplate,
+                image: Icons.fortitude)
             LabelStat(
                 text: "Reflexes",
                 value: $combatEntity.refST,
-                imageName: "figure.fall",
                 hoverEffect: true,
                 hoverColor: nil,
-                isEditable: isTemplate)
+                isEditable: isTemplate,
+                image: Icons.reflexes)
             LabelStat(
                 text: "Will",
                 value: $combatEntity.willST,
-                imageName: "brain.fill",
                 hoverEffect: true,
                 hoverColor: nil,
-                isEditable: isTemplate)
+                isEditable: isTemplate,
+                image: Icons.will)
             LabelStat(
                 text: "Perception",
                 value: $combatEntity.iniMod,
-                imageName: "eye",
                 hoverEffect: true,
                 hoverColor: Color.orange,
-                isEditable: isTemplate)
+                isEditable: isTemplate,
+                image: Icons.perception)
 
         }
             HStack {
                 LabelStat(
                     text: "AC",
                     value: $combatEntity.ac,
-                    imageName: "shield.lefthalf.filled",
                     hoverEffect: false,
                     hoverColor: nil,
-                    isEditable: isTemplate)
+                    isEditable: isTemplate,
+                    image: Icons.ac)
                 LabelStat(
                     text: "DC",
                     value: $combatEntity.dc,
-                    imageName: "hurricane",
                     hoverEffect: false,
                     hoverColor: nil,
-                    isEditable: isTemplate)
+                    isEditable: isTemplate,
+                    image: Icons.dc)
             }
         }
     }
@@ -371,7 +370,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
 
 
 #Preview {
-    //var entities: [CombatEntity] = []
     let entity = CombatEntity(
         name: "Eaudrick Vallemar",
         id: nil,

@@ -78,8 +78,7 @@ struct EntitiesLibraryView: View {
 extension EntitiesLibraryView {
     private var searchField: some View {
         HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
+            Icons.search.foregroundStyle(.secondary)
             TextField("Search by name, level, tag, or role", text: $searchText)
                 .textFieldStyle(.plain)
             if !searchText.isEmpty {
@@ -146,7 +145,7 @@ extension EntitiesLibraryView {
         } label: {
             HStack {
                 Spacer()
-                Image(systemName: "plus")
+                Icons.add
                 Spacer()
             }
             .padding(.vertical, 8)
@@ -161,7 +160,7 @@ extension EntitiesLibraryView {
             selectedEntityID = newEntity.id
         } label: {
             VStack(spacing: 8) {
-                Image(systemName: "plus.circle")
+                Icons.addCircle
                     .font(.largeTitle)
                 Text("Create a new entity")
             }

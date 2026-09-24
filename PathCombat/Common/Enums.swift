@@ -79,8 +79,6 @@ enum CombatRole: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// SF Symbol shown before the entity's name in the initiative tracker.
-    /// PC/Boss get a colored badge instead (see `Color.roleBadgeColor`), and minions get no marker.
     var icon: String? {
         switch self {
         case .spellcaster: "wand.and.sparkles.inverse"

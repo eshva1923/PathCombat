@@ -104,7 +104,7 @@ extension CombatTrackerView {
         } label: {
             HStack {
                 Spacer()
-                Image(systemName: "plus")
+                Icons.add
                 Spacer()
             }
             .padding(.vertical, 8)
@@ -119,7 +119,7 @@ extension CombatTrackerView {
             selectedEncounterID = newEncounter.id
         } label: {
             VStack(spacing: 8) {
-                Image(systemName: "plus.circle")
+                Icons.addCircle
                     .font(.largeTitle)
                 Text("Create a new encounter")
             }

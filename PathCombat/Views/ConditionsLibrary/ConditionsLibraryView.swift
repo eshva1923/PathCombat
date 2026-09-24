@@ -105,7 +105,7 @@ extension ConditionsLibraryView {
         } label: {
             HStack {
                 Spacer()
-                Image(systemName: "plus")
+                Icons.add
                 Spacer()
             }
             .padding(.vertical, 8)
@@ -120,7 +120,7 @@ extension ConditionsLibraryView {
             selectedConditionID = newCondition.id
         } label: {
             VStack(spacing: 8) {
-                Image(systemName: "plus.circle")
+                Icons.addCircle
                     .font(.largeTitle)
                 Text("Create a new condition")
             }

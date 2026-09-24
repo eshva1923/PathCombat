@@ -176,11 +176,10 @@ extension EncounterView {
                 LabelTag(text: roleText, color: .roleBadgeColor(for: entity.role), imageName: nil, hoverEffect: false, hoverColor: nil)
             }
             if !entity.affectingConditions.isEmpty {
-                Image(systemName: "figure.walk.triangle.fill")
-                    .foregroundStyle(.orange)
+                Icons.affectedByConditions.foregroundStyle(.orange)
             }
             if entity.isDead {
-                Image(systemName: "figure.teen")
+                Icons.dead
                     .frame(width: 16, height: 16)
                     .rotationEffect(.degrees(90))
                     .foregroundStyle(.red)
@@ -193,18 +192,18 @@ extension EncounterView {
     private func initiativeRowStats(_ entity: EncounterCombatEntity) -> some View {
         HStack {
             VStack {
-                Image(systemName: "figure.run")
+                Icons.initiative
                 Text("\(entity.currentIni)")
                     .fontWeight(.bold)
                     .foregroundStyle(entity.currentIni == 0 ? .red : .primary)
             }
             VStack {
-                Image(systemName: "heart.fill")
+                Icons.hp
                 Text("\(entity.hp)")
                     .fontWeight(.bold)
             }
             VStack {
-                Image(systemName: "bandage.fill")
+                Icons.wounds
                 Text("\(entity.wounds)")
                     .fontWeight(.bold)
                     .foregroundStyle(viewModel.woundSeverityColor(for: entity))
@@ -217,7 +216,7 @@ extension EncounterView {
             isShowingEntityPicker = true
         } label: {
             VStack(spacing: 4) {
-                Image(systemName: "plus.app")
+                Icons.addApp
                 Text("Load entity")
                     .font(.caption)
             }
