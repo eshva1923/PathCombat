@@ -24,4 +24,12 @@ final class ConditionsLibraryViewModel {
             modelContext.delete(condition)
         }
     }
+
+    func navigationTitle(selectedID: UUID?, in conditions: [Condition]) -> String {
+        if let selectedID,
+           let condition = conditions.first(where: { $0.id == selectedID }) {
+            return "\(AppSection.rulesAndConditions.rawValue) - \(condition.name)"
+        }
+        return AppSection.rulesAndConditions.rawValue
+    }
 }

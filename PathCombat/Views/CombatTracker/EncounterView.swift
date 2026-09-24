@@ -13,37 +13,6 @@ struct EncounterView: View {
         self._viewModel = State(initialValue: EncounterViewModel(encounter: encounter))
     }
 
-    var sortedByInitiative: [CombatEntity] {
-        encounter.combatEntities.sorted { lhs, rhs in
-            if lhs.currentIni != rhs.currentIni {
-                return lhs.currentIni > rhs.currentIni
-            }
-            return lhs.id.uuidString < rhs.id.uuidString
-        }
-    }
-
-    var dateAdded: String {
-        encounter.date.formatted(date: .long, time: .shortened)
-    }
-
-    var canStartCombat: Bool {
-        !encounter.combatEntities.isEmpty && !encounter.combatEntities.contains(where: { $0.currentIni == 0 })
-    }
-
-    var hasStartedCombat: Bool {
-        encounter.actingEntity != nil
-    }
-
-    var advanceButtonColor: Color {
-        if !canStartCombat {
-            return .red
-        } else if hasStartedCombat {
-            return .green
-        } else {
-            return .primary
-        }
-    }
-
     var body: some View {
         ScrollViewReader { proxy in
             HSplitView {
@@ -83,7 +52,7 @@ struct EncounterView: View {
                         Spacer()
                         Text("Added on:")
                             .italic()
-                        Text(dateAdded)
+                        Text(viewModel.dateAdded)
                             .italic()
                     }
                     .padding()
@@ -95,7 +64,7 @@ struct EncounterView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .sheet(isPresented: $isShowingEntityPicker) {
-            EntityPickerSheet { template in
+            EntityPickerSheet(isAddable: { viewModel.canAdd($0) }) { template in
                 viewModel.addEntity(from: template)
             }
         }
@@ -120,29 +89,33 @@ extension EncounterView {
                     }
                     .padding(6)
                 }
-                .disabled(!hasStartedCombat)
+                .disabled(!viewModel.hasStartedCombat)
                 Button {
-                    viewModel.advanceInitiative()
+                    if viewModel.needsNPCInitiativeRoll {
+                        viewModel.rollInitiativeForNPCs()
+                    } else {
+                        viewModel.advanceInitiative()
+                    }
                 } label: {
                     HStack {
-                        Text(advanceInitiativeButtonText)
+                        Text(viewModel.advanceInitiativeButtonText)
                         Image(systemName: "play.fill")
-                            .foregroundStyle(advanceButtonColor)
+                            .foregroundStyle(viewModel.advanceButtonColor)
                     }
                     .padding(6)
                 }
-                .disabled(!canStartCombat)
-                .help(canStartCombat ? "" : "Every entity needs a non-zero initiative before combat can start")
+                .disabled(viewModel.isAdvanceButtonDisabled)
+                .help(viewModel.advanceButtonHelpText)
             }.padding()
             if encounter.combatEntities.isEmpty {
                 Text("No entities added")
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
             } else {
-                List(sortedByInitiative) { entity in
+                List(viewModel.sortedByInitiative) { entity in
                     initiativeRow(entity, proxy: proxy)
                         .buttonStyle(.plain)
-                        .listRowBackground(initiativeRowBackground(entity))
+                        .listRowBackground(viewModel.rowBackground(for: entity))
                 }
                 .listStyle(.plain)
             }
@@ -159,7 +132,9 @@ extension EncounterView {
                 initiativeRowHeader(entity)
                 HStack {
                     ForEach(entity.affectingConditions) { applied in
-                        LabelTag(text: conditionTagText(applied), color: .orange, imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(
+                            text: viewModel.conditionTagText(applied, allConditions: allConditions),
+                            color: .orange, imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
                 }
             }
@@ -170,6 +145,9 @@ extension EncounterView {
         HStack {
             Text(entity.name)
                 .lineLimit(1)
+            if let tag = viewModel.uniquePerEncounterTag(for: entity) {
+                LabelTag(text: tag, color: .entityTagColor(for: tag), imageName: nil, hoverEffect: false, hoverColor: nil)
+            }
             if !entity.affectingConditions.isEmpty {
                 Image(systemName: "figure.walk.triangle.fill")
                     .foregroundStyle(.orange)
@@ -203,32 +181,6 @@ extension EncounterView {
                 Text("\(entity.wounds)")
                     .fontWeight(.bold)
             }
-        }
-    }
-
-    private func initiativeRowBackground(_ entity: CombatEntity) -> Color {
-        if entity.isDead {
-            return Color.black.opacity(0.35)
-        } else if entity.id == encounter.actingEntity {
-            return Color.secondary.opacity(0.25)
-        } else {
-            return Color.clear
-        }
-    }
-
-    private func conditionTagText(_ applied: AppliedCondition) -> String {
-        let name = allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown"
-        guard let value = applied.value else {
-            return name
-        }
-        return "\(name) \(value)"
-    }
-    
-    var advanceInitiativeButtonText: String {
-        if hasStartedCombat {
-         return "Turn \(viewModel.encounter.elapsedCombatRounds)"
-        } else {
-            return "Start Combat"
         }
     }
 

@@ -54,7 +54,7 @@ struct CombatEntityView: View {
             } else {
                 HStack{
                     ForEach (combatEntity.tags, id: \.self) {tag in
-                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(text: tag, color: .entityTagColor(for: tag), imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
                 }
             }
@@ -91,10 +91,7 @@ struct CombatEntityView: View {
             Image(systemName: "tag")
             TextField("Tags (comma separated)", text: $tagsText)
                 .onChange(of: tagsText) { _, newValue in
-                    combatEntity.tags = newValue
-                        .split(separator: ",")
-                        .map { $0.trimmingCharacters(in: .whitespaces) }
-                        .filter { !$0.isEmpty }
+                    viewModel.updateTags(from: newValue)
                 }
         }
         .padding(.horizontal, 10)
@@ -171,7 +168,7 @@ struct CombatEntityView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(combatEntity.affectingConditions) { applied in
                         HStack(spacing: 10) {
-                            Text(conditionName(for: applied))
+                            Text(viewModel.conditionName(for: applied, allConditions: allConditions))
                                 .fixedSize()
                             TextField("-", text: valueBinding(for: applied))
                                 .frame(width: 24)
@@ -195,19 +192,10 @@ struct CombatEntityView: View {
         }
     }
 
-    private func conditionName(for applied: AppliedCondition) -> String {
-        allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown condition"
-    }
-
     private func valueBinding(for applied: AppliedCondition) -> Binding<String> {
         Binding(
-            get: { applied.value.map(String.init) ?? "-" },
-            set: { newValue in
-                guard let index = combatEntity.affectingConditions.firstIndex(where: { $0.id == applied.id }) else {
-                    return
-                }
-                combatEntity.affectingConditions[index].value = Int(newValue)
-            }
+            get: { viewModel.conditionValueText(for: applied) },
+            set: { newValue in viewModel.setConditionValue(applied, to: newValue) }
         )
     }
     

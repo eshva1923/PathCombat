@@ -6,6 +6,21 @@
 //
 import SwiftUI
 
+extension Color {
+    /// Special-cased background color for entity tags: PC and Boss get a distinct
+    /// color so they stand out from ordinary tags in the entity/initiative lists.
+    static func entityTagColor(for tag: String, default defaultColor: Color = .accentColor) -> Color {
+        switch tag.lowercased() {
+        case "boss":
+            return Color(red: 0.55, green: 0.0, blue: 0.0)
+        case "pc":
+            return .purple
+        default:
+            return defaultColor
+        }
+    }
+}
+
 struct LabelTag: View {
     let text: String
     let color: Color

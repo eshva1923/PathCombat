@@ -22,14 +22,6 @@ struct ConditionsLibraryView: View {
         static let maxSplitViewWidth = 220.0
     }
 
-    private var navigationTitleText: String {
-        if let selectedConditionID,
-           let condition = conditions.first(where: { $0.id == selectedConditionID }) {
-            return "\(AppSection.rulesAndConditions.rawValue) - \(condition.name)"
-        }
-        return AppSection.rulesAndConditions.rawValue
-    }
-
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ScrollView(.vertical) {
@@ -57,7 +49,7 @@ struct ConditionsLibraryView: View {
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
-        .navigationTitle(navigationTitleText)
+        .navigationTitle(viewModel.navigationTitle(selectedID: selectedConditionID, in: conditions))
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all

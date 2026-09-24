@@ -24,4 +24,12 @@ final class EntitiesLibraryViewModel {
             modelContext.delete(entity)
         }
     }
+
+    func navigationTitle(selectedID: UUID?, in entities: [CombatEntity]) -> String {
+        if let selectedID,
+           let entity = entities.first(where: { $0.id == selectedID }) {
+            return "\(AppSection.entitiesLibrary.rawValue) - \(entity.name)"
+        }
+        return AppSection.entitiesLibrary.rawValue
+    }
 }

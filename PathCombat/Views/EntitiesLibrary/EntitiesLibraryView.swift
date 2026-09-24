@@ -22,14 +22,6 @@ struct EntitiesLibraryView: View {
         static let maxSplitViewWidth = 220.0
     }
 
-    private var navigationTitleText: String {
-        if let selectedEntityID,
-           let entity = entities.first(where: { $0.id == selectedEntityID }) {
-            return "\(AppSection.entitiesLibrary.rawValue) - \(entity.name)"
-        }
-        return AppSection.entitiesLibrary.rawValue
-    }
-
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ScrollView(.vertical) {
@@ -60,7 +52,7 @@ struct EntitiesLibraryView: View {
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
-        .navigationTitle(navigationTitleText)
+        .navigationTitle(viewModel.navigationTitle(selectedID: selectedEntityID, in: entities))
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all

@@ -11,6 +11,7 @@ import SwiftData
 struct EntityPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var libraryEntities: [CombatEntity]
+    let isAddable: (CombatEntity) -> Bool
     let onAdd: (CombatEntity) -> Void
 
     @State private var selectedEntityID: UUID?
@@ -18,6 +19,11 @@ struct EntityPickerSheet: View {
 
     private var availableEntities: [CombatEntity] {
         libraryEntities.sorted { $0.level > $1.level }
+    }
+
+    private var selectedEntity: CombatEntity? {
+        guard let selectedEntityID else { return nil }
+        return availableEntities.first(where: { $0.id == selectedEntityID })
     }
 
     var body: some View {
@@ -49,14 +55,13 @@ struct EntityPickerSheet: View {
                 }
                 Spacer()
                 Button("Add to Encounter") {
-                    if let selectedEntityID,
-                       let entity = availableEntities.first(where: { $0.id == selectedEntityID }) {
-                        onAdd(entity)
+                    if let selectedEntity {
+                        onAdd(selectedEntity)
                     }
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(selectedEntityID == nil)
+                .disabled(selectedEntity.map { !isAddable($0) } ?? true)
             }
             .padding()
         }
@@ -64,7 +69,8 @@ struct EntityPickerSheet: View {
     }
 
     private func entityRow(_ entity: CombatEntity) -> some View {
-        Button {
+        let addable = isAddable(entity)
+        return Button {
             selectedEntityID = entity.id
         } label: {
             HStack {
@@ -73,7 +79,7 @@ struct EntityPickerSheet: View {
                 Spacer()
                 HStack {
                     ForEach(entity.tags, id: \.self) { tag in
-                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(text: tag, color: .entityTagColor(for: tag), imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
                     LabelTag(text: "Level \(entity.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
@@ -83,6 +89,8 @@ struct EntityPickerSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
+        .disabled(!addable)
+        .opacity(addable ? 1 : 0.4)
         .background(
             selectedEntityID == entity.id
                 ? Color.accentColor.opacity(0.25)
@@ -91,6 +99,7 @@ struct EntityPickerSheet: View {
         .onHover { hovering in
             hoveredEntityID = hovering ? entity.id : nil
         }
+        .help(addable ? "" : "Only one \(entity.name) can be added to an encounter")
     }
 }
 
@@ -106,6 +115,6 @@ struct EntityPickerSheet: View {
         name: "Goblin Scout", id: nil, tags: ["Goblin"], level: 1, iniMod: 4,
         currentIni: nil, hp: 12, wounds: nil, currentConditions: nil,
         ac: 14, fortST: 2, refST: 4, willST: 1, dc: 12))
-    return EntityPickerSheet(onAdd: { _ in })
+    return EntityPickerSheet(isAddable: { _ in true }, onAdd: { _ in })
         .modelContainer(container)
 }

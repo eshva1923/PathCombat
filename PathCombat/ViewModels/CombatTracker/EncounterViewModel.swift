@@ -29,7 +29,107 @@ final class EncounterViewModel {
         encounter.date.formatted(date: .long, time: .shortened)
     }
 
+    private static let uniquePerEncounterTags: Set<String> = ["pc", "boss"]
+
+    func canAdd(_ template: CombatEntity) -> Bool {
+        guard isUniquePerEncounter(template) else { return true }
+        return !encounter.combatEntities.contains { $0.name == template.name }
+    }
+
+    private func isUniquePerEncounter(_ entity: CombatEntity) -> Bool {
+        entity.tags.contains { Self.uniquePerEncounterTags.contains($0.lowercased()) }
+    }
+
+    func uniquePerEncounterTag(for entity: CombatEntity) -> String? {
+        entity.tags.first { Self.uniquePerEncounterTags.contains($0.lowercased()) }
+    }
+
+    private func isPC(_ entity: CombatEntity) -> Bool {
+        entity.tags.contains { $0.lowercased() == "pc" }
+    }
+
+    var npcsNeedingInitiative: [CombatEntity] {
+        encounter.combatEntities.filter { $0.currentIni == 0 && !isPC($0) }
+    }
+
+    var needsNPCInitiativeRoll: Bool {
+        !npcsNeedingInitiative.isEmpty
+    }
+
+    func rollInitiativeForNPCs() {
+        withAnimation {
+            for entity in npcsNeedingInitiative {
+                entity.currentIni = DieType.d20.roll() + entity.iniMod
+            }
+        }
+    }
+
+    var canStartCombat: Bool {
+        !encounter.combatEntities.isEmpty && !encounter.combatEntities.contains(where: { $0.currentIni == 0 })
+    }
+
+    var hasStartedCombat: Bool {
+        encounter.actingEntity != nil
+    }
+
+    var isAdvanceButtonDisabled: Bool {
+        if encounter.combatEntities.isEmpty { return true }
+        if needsNPCInitiativeRoll { return false }
+        return !canStartCombat
+    }
+
+    var advanceButtonColor: Color {
+        if needsNPCInitiativeRoll {
+            return .orange
+        } else if !canStartCombat {
+            return .red
+        } else if hasStartedCombat {
+            return .green
+        } else {
+            return .primary
+        }
+    }
+
+    var advanceInitiativeButtonText: String {
+        if needsNPCInitiativeRoll {
+            return "Roll Initiative for NPCs"
+        } else if hasStartedCombat {
+            return "Turn \(encounter.elapsedCombatRounds)"
+        } else {
+            return "Start Combat"
+        }
+    }
+
+    var advanceButtonHelpText: String {
+        if needsNPCInitiativeRoll {
+            return "Rolls initiative for every non-PC entity that hasn't rolled yet"
+        } else if !canStartCombat {
+            return "Every entity needs a non-zero initiative before combat can start"
+        } else {
+            return ""
+        }
+    }
+
+    func rowBackground(for entity: CombatEntity) -> Color {
+        if entity.isDead {
+            return Color.black.opacity(0.35)
+        } else if entity.id == encounter.actingEntity {
+            return Color.secondary.opacity(0.25)
+        } else {
+            return Color.clear
+        }
+    }
+
+    func conditionTagText(_ applied: AppliedCondition, allConditions: [Condition]) -> String {
+        let name = allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown"
+        guard let value = applied.value else {
+            return name
+        }
+        return "\(name) \(value)"
+    }
+
     func addEntity(from template: CombatEntity) {
+        guard canAdd(template) else { return }
         withAnimation {
             let copy = template.copyForEncounter(name: nextAvailableName(for: template.name))
             encounter.combatEntities.append(copy)

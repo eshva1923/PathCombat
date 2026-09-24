@@ -30,4 +30,26 @@ final class CombatEntityViewModel {
     func removeCondition(_ applied: AppliedCondition) {
         combatEntity.affectingConditions.removeAll(where: { $0.id == applied.id })
     }
+
+    func conditionName(for applied: AppliedCondition, allConditions: [Condition]) -> String {
+        allConditions.first(where: { $0.id == applied.conditionID })?.name ?? "Unknown condition"
+    }
+
+    func conditionValueText(for applied: AppliedCondition) -> String {
+        applied.value.map(String.init) ?? "-"
+    }
+
+    func setConditionValue(_ applied: AppliedCondition, to newValue: String) {
+        guard let index = combatEntity.affectingConditions.firstIndex(where: { $0.id == applied.id }) else {
+            return
+        }
+        combatEntity.affectingConditions[index].value = Int(newValue)
+    }
+
+    func updateTags(from text: String) {
+        combatEntity.tags = text
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
 }

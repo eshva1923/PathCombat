@@ -22,14 +22,6 @@ struct CombatTrackerView: View {
         static let maxSplitViewWidth = 220.0
     }
 
-    private var navigationTitleText: String {
-        if let selectedEncounterID,
-           let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
-            return "\(AppSection.combatTracker.rawValue) - \(encounter.name)"
-        }
-        return AppSection.combatTracker.rawValue
-    }
-    
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ScrollView(.vertical) {
@@ -56,7 +48,7 @@ struct CombatTrackerView: View {
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
-        .navigationTitle(navigationTitleText)
+        .navigationTitle(viewModel.navigationTitle(selectedID: selectedEncounterID, in: encounters))
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all

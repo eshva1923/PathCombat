@@ -29,4 +29,12 @@ final class CombatTrackerViewModel {
             modelContext.delete(encounter)
         }
     }
+
+    func navigationTitle(selectedID: UUID?, in encounters: [Encounter]) -> String {
+        if let selectedID,
+           let encounter = encounters.first(where: { $0.id == selectedID }) {
+            return "\(AppSection.combatTracker.rawValue) - \(encounter.name)"
+        }
+        return AppSection.combatTracker.rawValue
+    }
 }
