@@ -24,7 +24,7 @@ struct ConditionsLibraryView: View {
     }
 
     private var filteredConditions: [Condition] {
-        conditions.filter { $0.matchesSearch(searchText) }
+        conditions.filter { $0.matchesSearch(searchText) }.sorted { $0.name < $1.name }
     }
 
     var body: some View {
@@ -38,7 +38,6 @@ struct ConditionsLibraryView: View {
                             conditionRow(condition)
                             Divider()
                         }
-                        addConditionRow
                     }
                 }
             }
@@ -59,6 +58,16 @@ struct ConditionsLibraryView: View {
         }
         .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedConditionID, in: conditions))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    let newCondition = viewModel.addCondition(using: modelContext)
+                    selectedConditionID = newCondition.id
+                } label: {
+                    Icons.add
+                }
+            }
+        }
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all
@@ -66,7 +75,7 @@ struct ConditionsLibraryView: View {
         }
         .onAppear {
             if selectedConditionID == nil {
-                selectedConditionID = conditions.first?.id
+                selectedConditionID = conditions.sorted { $0.name < $1.name }.first?.id
             }
         }
     }
@@ -123,22 +132,6 @@ extension ConditionsLibraryView {
         .onHover { hovering in
             hoveredConditionID = hovering ? condition.id : nil
         }
-    }
-
-    var addConditionRow: some View {
-        Button {
-            let newCondition = viewModel.addCondition(using: modelContext)
-            selectedConditionID = newCondition.id
-        } label: {
-            HStack {
-                Spacer()
-                Icons.add
-                Spacer()
-            }
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     var createConditionButton: some View {

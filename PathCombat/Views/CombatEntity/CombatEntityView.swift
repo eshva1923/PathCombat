@@ -85,8 +85,10 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 if !isTemplate {
                     conditionsSection
                 }
-                actionsSection
-                spellsSection
+                if combatEntity.role != .pc {
+                    actionsSection
+                    spellsSection
+                }
             }
         }
         .padding(.horizontal)

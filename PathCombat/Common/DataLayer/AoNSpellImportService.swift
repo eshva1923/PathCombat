@@ -1,23 +1,8 @@
 import Foundation
 import SwiftData
 
-enum AoNImportError: LocalizedError {
-    case invalidResponse
-
-    var errorDescription: String? {
-        switch self {
-        case .invalidResponse:
-            return "Archive of Nethys returned an unexpected response."
-        }
-    }
-}
-
 /// Imports the Pathfinder 2e spell list from Archive of Nethys's public search index.
-/// The site's search UI is backed by a public Elasticsearch instance at
-/// elasticsearch.aonprd.com — no scraping of rendered pages needed.
 enum AoNSpellImportService {
-    private static let endpoint = URL(string: "https://elasticsearch.aonprd.com/aon/_search")!
-
     /// Exact-match action-cost strings that map onto our discrete speed encoding.
     /// Anything else (durations like "10 minutes", variable costs like "Single Action
     /// to Three Actions") becomes speed 4 (Special), with the raw text preserved in details.
@@ -29,32 +14,12 @@ enum AoNSpellImportService {
         "Three Actions": 3
     ]
 
-    private static let requestBody: [String: Any] = [
-        "from": 0,
-        "size": 10000,
-        "_source": ["name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "trait_raw", "url", "markdown"],
-        "query": [
-            "bool": [
-                "must": [["match": ["category": "spell"]]],
-                "must_not": [
-                    ["exists": ["field": "remaster_id"]],
-                    ["term": ["exclude_from_search": true]]
-                ]
-            ]
-        ]
+    private static let sourceFields = [
+        "name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "trait_raw",
+        "url", "markdown", "id", "legacy_id", "remaster_id"
     ]
 
-    private struct SearchResponse: Decodable {
-        struct HitsWrapper: Decodable {
-            struct Hit: Decodable {
-                let _source: SpellSource
-            }
-            let hits: [Hit]
-        }
-        let hits: HitsWrapper
-    }
-
-    private struct SpellSource: Decodable {
+    private struct SpellSource: AoNVersionedSource {
         let name: String
         let level: Int?
         let spell_type: String?
@@ -65,14 +30,18 @@ enum AoNSpellImportService {
         let trait_raw: [String]?
         let url: String?
         let markdown: String?
+        let id: String
+        let legacy_id: [String]?
+        let remaster_id: [String]?
     }
 
     /// Fetches the current spell list and upserts it into the store, matching existing
     /// spells by `aonID`. Spells already imported get every field refreshed from AoN;
     /// spells you created yourself (no matching `aonID`) are never touched. Returns the
     /// number of spells processed.
-    static func importSpells(context: ModelContext) async throws -> Int {
-        let sources = try await fetchSpellSources()
+    static func importSpells(context: ModelContext, includeLegacyDescriptions: Bool = false) async throws -> Int {
+        let sources: [SpellSource] = try await AoNSearchClient.fetchAll(category: "spell", sourceFields: sourceFields)
+        let pairs = AoNSearchClient.resolveKeepersWithLegacy(sources)
 
         let existing = try context.fetch(FetchDescriptor<Spell>())
         var existingByAonID: [Int: Spell] = [:]
@@ -83,8 +52,9 @@ enum AoNSpellImportService {
         }
 
         var count = 0
-        for source in sources {
-            guard let mapped = makeSpell(from: source), let aonID = mapped.aonID else { continue }
+        for (keeper, legacy) in pairs {
+            let legacyToMerge = includeLegacyDescriptions ? legacy : nil
+            guard let mapped = makeSpell(from: keeper, legacy: legacyToMerge), let aonID = mapped.aonID else { continue }
             if let match = existingByAonID[aonID] {
                 match.name = mapped.name
                 match.level = mapped.level
@@ -105,40 +75,32 @@ enum AoNSpellImportService {
         return count
     }
 
-    private static func fetchSpellSources() async throws -> [SpellSource] {
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+    private static func makeSpell(from keeper: SpellSource, legacy: SpellSource?) -> Spell? {
+        guard let aonID = AoNSearchClient.aonID(from: keeper.url) else { return nil }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw AoNImportError.invalidResponse
-        }
-        let decoded = try JSONDecoder().decode(SearchResponse.self, from: data)
-        return decoded.hits.hits.map { $0._source }
-    }
+        let isFocusSpell = keeper.spell_type == "Focus"
+        let isCantrip = keeper.spell_type == "Cantrip"
+        let level = isCantrip ? 0 : (keeper.level ?? 1)
+        let traditions = (keeper.tradition ?? []).compactMap { SpellTradition(rawValue: $0) }
+        let tags = keeper.trait_raw ?? []
 
-    private static func makeSpell(from source: SpellSource) -> Spell? {
-        guard let aonID = aonID(from: source.url) else { return nil }
-
-        let isFocusSpell = source.spell_type == "Focus"
-        let isCantrip = source.spell_type == "Cantrip"
-        let level = isCantrip ? 0 : (source.level ?? 1)
-        let traditions = (source.tradition ?? []).compactMap { SpellTradition(rawValue: $0) }
-        let tags = source.trait_raw ?? []
-
-        var details = extractDetails(from: source.markdown ?? "")
+        var details = extractDetails(from: keeper.markdown ?? "")
         let speed: Int
-        if let raw = source.actions, let mapped = actionSpeedMap[raw] {
+        if let raw = keeper.actions, let mapped = actionSpeedMap[raw] {
             speed = mapped
         } else {
             speed = 4
-            details += "\n\n* Special casting time: \(source.actions ?? "Unknown")"
+            details += "\n\n* Special casting time: \(keeper.actions ?? "Unknown")"
+        }
+        if let legacy {
+            let legacyDetails = extractDetails(from: legacy.markdown ?? "")
+            if !legacyDetails.isEmpty {
+                details += "\n\n== LEGACY ==\n\n" + legacyDetails
+            }
         }
 
         return Spell(
-            name: source.name,
+            name: keeper.name,
             id: nil,
             level: level,
             isFocusSpell: isFocusSpell,
@@ -146,15 +108,9 @@ enum AoNSpellImportService {
             aonID: aonID,
             traditions: traditions,
             speed: speed,
-            range: stripAonMarkup(source.range_raw ?? ""),
-            area: stripAonMarkup(source.area_raw ?? ""),
+            range: AoNMarkupCleaner.stripLinks(keeper.range_raw ?? ""),
+            area: AoNMarkupCleaner.stripLinks(keeper.area_raw ?? ""),
             tags: tags)
-    }
-
-    private static func aonID(from urlString: String?) -> Int? {
-        guard let urlString,
-              let range = urlString.range(of: #"ID=(\d+)"#, options: .regularExpression) else { return nil }
-        return Int(urlString[range].dropFirst(3))
     }
 
     /// Everything after the header block, which may itself contain further `---`-separated
@@ -164,20 +120,10 @@ enum AoNSpellImportService {
     private static func extractDetails(from markdown: String) -> String {
         let parts = markdown.components(separatedBy: "\n---\n")
         var body = parts.count > 1 ? parts.dropFirst().joined(separator: "\n\n") : markdown
-        body = stripAonMarkup(body)
+        body = AoNMarkupCleaner.stripLinks(body)
         body = body.replacingOccurrences(of: #"<br\s*/?>"#, with: "\n", options: .regularExpression)
         body = body.replacingOccurrences(of: #"</li>"#, with: "\n", options: .regularExpression)
         body = body.replacingOccurrences(of: #"<[^>]+>"#, with: "", options: .regularExpression)
         return body.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Strips AoN's link markup, keeping only the visible text: `{{rules 2387 "emanation"}}`
-    /// becomes `emanation`, and Markdown-style `[text](url)` links become `text`.
-    private static func stripAonMarkup(_ text: String) -> String {
-        var result = text
-        result = result.replacingOccurrences(of: #"\{\{[^{}]*?"([^"]*)"[^{}]*?\}\}"#, with: "$1", options: .regularExpression)
-        result = result.replacingOccurrences(of: #"\{\{[^{}]*?\}\}"#, with: "", options: .regularExpression)
-        result = result.replacingOccurrences(of: #"\[([^\]]*)\]\([^)]*\)"#, with: "$1", options: .regularExpression)
-        return result
     }
 }

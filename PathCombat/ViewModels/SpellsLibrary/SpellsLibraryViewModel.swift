@@ -1,6 +1,12 @@
 import SwiftUI
 import SwiftData
 
+enum SpellLibrarySection: Hashable {
+    case cantrip
+    case rank(Int)
+    case focus
+}
+
 @Observable
 final class SpellsLibraryViewModel {
     @discardableResult
@@ -26,11 +32,24 @@ final class SpellsLibraryViewModel {
         return AppSection.spellsLibrary.rawValue
     }
 
-    func groupedByLevel(_ spells: [Spell]) -> [(level: Int, spells: [Spell])] {
-        let grouped = Dictionary(grouping: spells, by: { $0.level })
-        return grouped.keys.sorted().map { level in
-            (level: level, spells: grouped[level, default: []].sorted { $0.name < $1.name })
+    /// Groups non-focus spells by rank; every focus spell (regardless of its own rank) is
+    /// pulled into a single trailing "Focus" section instead, ordered by rank then name.
+    func groupedSpells(_ spells: [Spell]) -> [(section: SpellLibrarySection, spells: [Spell])] {
+        let focusSpells = spells.filter { $0.isFocusSpell }
+        let rankedSpells = spells.filter { !$0.isFocusSpell }
+
+        let grouped = Dictionary(grouping: rankedSpells, by: { $0.level })
+        var result: [(section: SpellLibrarySection, spells: [Spell])] = grouped.keys.sorted().map { level in
+            let section: SpellLibrarySection = level == 0 ? .cantrip : .rank(level)
+            return (section, grouped[level, default: []].sorted { $0.name < $1.name })
         }
+
+        if !focusSpells.isEmpty {
+            let sortedFocus = focusSpells.sorted { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
+            result.append((.focus, sortedFocus))
+        }
+
+        return result
     }
 
     func updateTags(on spell: Spell, from text: String) {

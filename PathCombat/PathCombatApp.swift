@@ -44,6 +44,9 @@ struct PathCombatApp: App {
                 Button("Import Spells from Archive of Nethys...") {
                     DataBackupCommands.importSpellsFromAoN(context: sharedModelContainer.mainContext)
                 }
+                Button("Import Conditions from Archive of Nethys...") {
+                    DataBackupCommands.importConditionsFromAoN(context: sharedModelContainer.mainContext)
+                }
                 Divider()
                 Menu("Wipe Data") {
                     Button("Wipe Encounters") {

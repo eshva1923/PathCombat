@@ -15,13 +15,15 @@ final class Condition {
     var details: String
     var isPersistent: Bool
     var damage: String?
+    var aonID: Int?
 
-    init(name: String?, id: UUID?, description: String?, isPersistent: Bool? = nil, damage: String? = nil) {
+    init(name: String?, id: UUID?, description: String?, isPersistent: Bool? = nil, damage: String? = nil, aonID: Int? = nil) {
         self.id = id ?? UUID()
         self.name = name ?? "Unnamed condition"
         self.details = description ?? ""
         self.isPersistent = isPersistent ?? false
         self.damage = damage
+        self.aonID = aonID
     }
 
     static func new() -> Condition {

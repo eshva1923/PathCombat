@@ -18,10 +18,12 @@ struct ConditionPickerSheet: View {
     @State private var hoveredConditionID: UUID?
     @State private var valueText: String = ""
     @State private var damageText: String = ""
+    @State private var searchText = ""
 
     private var availableConditions: [Condition] {
         libraryConditions
             .filter { !excludedConditionIDs.contains($0.id) }
+            .filter { searchText.isEmpty || $0.name.localizedCaseInsensitiveContains(searchText) }
             .sorted { $0.name < $1.name }
     }
 
@@ -36,10 +38,25 @@ struct ConditionPickerSheet: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding()
+            HStack {
+                Icons.search.foregroundStyle(.secondary)
+                SelectAllTextField(text: $searchText)
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
             Divider()
             if availableConditions.isEmpty {
                 Spacer()
-                Text("No conditions available in the library")
+                Text(searchText.isEmpty ? "No conditions available in the library" : "No conditions match \"\(searchText)\"")
                     .foregroundStyle(.secondary)
                 Spacer()
             } else {

@@ -19,7 +19,7 @@ enum DataBackupService {
     private static let encounterEntitiesMarker = "#EncounterEntities"
     private static let encountersMarker = "#Encounters"
 
-    private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
+    private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent", "aonID"]
     private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area", "tags"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
@@ -47,7 +47,7 @@ enum DataBackupService {
         for condition in conditions {
             lines.append(CSVWriter.row([
                 condition.id.uuidString, condition.name, condition.details, condition.damage ?? "",
-                condition.isPersistent ? "true" : "false"
+                condition.isPersistent ? "true" : "false", condition.aonID.map(String.init) ?? ""
             ]))
         }
         lines.append("")
@@ -135,7 +135,8 @@ enum DataBackupService {
             guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
             let damage = row.count >= 4 && !row[3].isEmpty ? row[3] : nil
             let isPersistent = row.count >= 5 ? row[4] == "true" : nil
-            context.insert(Condition(name: row[1], id: id, description: row[2], isPersistent: isPersistent, damage: damage))
+            let aonID = row.count >= 6 && !row[5].isEmpty ? Int(row[5]) : nil
+            context.insert(Condition(name: row[1], id: id, description: row[2], isPersistent: isPersistent, damage: damage, aonID: aonID))
         }
 
         for row in sections[spellsMarker] ?? [] {

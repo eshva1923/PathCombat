@@ -9,7 +9,7 @@ struct SpellsLibraryView: View {
     @State private var hoveredSpellID: UUID?
     @State private var selectedSpellID: UUID?
     @State private var searchText = ""
-    @State private var expandedLevel: Int?
+    @State private var expandedSection: SpellLibrarySection?
 
     let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -23,8 +23,8 @@ struct SpellsLibraryView: View {
         static let maxSplitViewWidth = 220.0
     }
 
-    private var groupedSpells: [(level: Int, spells: [Spell])] {
-        viewModel.groupedByLevel(spells.filter { $0.matchesSearch(searchText) })
+    private var groupedSpells: [(section: SpellLibrarySection, spells: [Spell])] {
+        viewModel.groupedSpells(spells.filter { $0.matchesSearch(searchText) })
     }
 
     var body: some View {
@@ -34,19 +34,18 @@ struct SpellsLibraryView: View {
                 Divider()
                 ScrollView(.vertical) {
                     LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        ForEach(groupedSpells, id: \.level) { group in
+                        ForEach(groupedSpells, id: \.section) { group in
                             Section {
-                                if !searchText.isEmpty || expandedLevel == group.level {
+                                if !searchText.isEmpty || expandedSection == group.section {
                                     ForEach(group.spells) { spell in
                                         spellRow(spell)
                                         Divider()
                                     }
                                 }
                             } header: {
-                                levelHeader(group.level)
+                                sectionHeader(group.section)
                             }
                         }
-                        addSpellRow
                     }
                 }
             }
@@ -67,6 +66,17 @@ struct SpellsLibraryView: View {
         }
         .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedSpellID, in: spells))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    let newSpell = viewModel.addSpell(using: modelContext)
+                    selectedSpellID = newSpell.id
+                    expandedSection = newSpell.isFocusSpell ? .focus : (newSpell.level == 0 ? .cantrip : .rank(newSpell.level))
+                } label: {
+                    Icons.add
+                }
+            }
+        }
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all
@@ -74,11 +84,16 @@ struct SpellsLibraryView: View {
         }
         .onAppear {
             if selectedSpellID == nil {
-                selectedSpellID = spells.first?.id
+                let cantrips = spells.filter { $0.level == 0 && !$0.isFocusSpell }.sorted { $0.name < $1.name }
+                selectedSpellID = cantrips.first?.id ?? groupedSpells.first?.spells.first?.id
             }
-            if expandedLevel == nil {
+            if expandedSection == nil {
                 let selected = spells.first(where: { $0.id == selectedSpellID })
-                expandedLevel = selected?.level ?? groupedSpells.first?.level
+                if let selected {
+                    expandedSection = selected.isFocusSpell ? .focus : (selected.level == 0 ? .cantrip : .rank(selected.level))
+                } else {
+                    expandedSection = groupedSpells.first?.section
+                }
             }
         }
     }
@@ -103,22 +118,28 @@ extension SpellsLibraryView {
         .padding(.vertical, 8)
     }
 
-    private func levelHeader(_ level: Int) -> some View {
+    private func sectionHeader(_ section: SpellLibrarySection) -> some View {
         Button {
-            expandedLevel = expandedLevel == level ? nil : level
+            expandedSection = expandedSection == section ? nil : section
         } label: {
             HStack {
-                if level != 0 {
+                switch section {
+                case .cantrip:
+                    Text("Cantrips")
+                    Spacer()
+                case .rank(let level):
                     Text("Rank ")
                     Spacer()
                     Icons.spellRank(level, filled: true)
                         .foregroundStyle(.secondary)
-                } else {
-                    Text("Cantrips")
+                case .focus:
+                    Text("Focus")
                     Spacer()
+                    Icons.focusSpell
+                        .foregroundStyle(.secondary)
                 }
                 Image(systemName: "chevron.right")
-                    .rotationEffect(.degrees(expandedLevel == level ? 90 : 0))
+                    .rotationEffect(.degrees(expandedSection == section ? 90 : 0))
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 10)
@@ -170,23 +191,6 @@ extension SpellsLibraryView {
         .onHover { hovering in
             hoveredSpellID = hovering ? spell.id : nil
         }
-    }
-
-    var addSpellRow: some View {
-        Button {
-            let newSpell = viewModel.addSpell(using: modelContext)
-            selectedSpellID = newSpell.id
-            expandedLevel = newSpell.level
-        } label: {
-            HStack {
-                Spacer()
-                Icons.add
-                Spacer()
-            }
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     var createSpellButton: some View {
