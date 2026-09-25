@@ -14,11 +14,13 @@ enum DataBackupError: LocalizedError {
 
 enum DataBackupService {
     private static let conditionsMarker = "#Conditions"
+    private static let spellsMarker = "#Spells"
     private static let entitiesMarker = "#Entities"
     private static let encounterEntitiesMarker = "#EncounterEntities"
     private static let encountersMarker = "#Encounters"
 
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
+    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
         "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
@@ -33,6 +35,7 @@ enum DataBackupService {
 
     static func exportCSV(context: ModelContext) throws -> String {
         let conditions = try context.fetch(FetchDescriptor<Condition>())
+        let spells = try context.fetch(FetchDescriptor<Spell>())
         let entities = try context.fetch(FetchDescriptor<CombatEntity>())
         let encounterEntities = try context.fetch(FetchDescriptor<EncounterCombatEntity>())
         let encounters = try context.fetch(FetchDescriptor<Encounter>())
@@ -46,6 +49,13 @@ enum DataBackupService {
                 condition.id.uuidString, condition.name, condition.details, condition.damage ?? "",
                 condition.isPersistent ? "true" : "false"
             ]))
+        }
+        lines.append("")
+
+        lines.append(spellsMarker)
+        lines.append(CSVWriter.row(spellsHeader))
+        for spell in spells {
+            lines.append(CSVWriter.row(spellRow(for: spell)))
         }
         lines.append("")
 
@@ -98,11 +108,17 @@ enum DataBackupService {
         try context.save()
     }
 
+    static func wipeSpells(context: ModelContext) throws {
+        try context.delete(model: Spell.self)
+        try context.save()
+    }
+
     static func wipeAll(context: ModelContext) throws {
         try context.delete(model: Encounter.self)
         try context.delete(model: EncounterCombatEntity.self)
         try context.delete(model: CombatEntity.self)
         try context.delete(model: Condition.self)
+        try context.delete(model: Spell.self)
         try context.save()
     }
 
@@ -113,12 +129,18 @@ enum DataBackupService {
         try context.delete(model: EncounterCombatEntity.self)
         try context.delete(model: CombatEntity.self)
         try context.delete(model: Condition.self)
+        try context.delete(model: Spell.self)
 
         for row in sections[conditionsMarker] ?? [] {
             guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
             let damage = row.count >= 4 && !row[3].isEmpty ? row[3] : nil
             let isPersistent = row.count >= 5 ? row[4] == "true" : nil
             context.insert(Condition(name: row[1], id: id, description: row[2], isPersistent: isPersistent, damage: damage))
+        }
+
+        for row in sections[spellsMarker] ?? [] {
+            guard let spell = parseSpell(from: row) else { continue }
+            context.insert(spell)
         }
 
         for row in sections[entitiesMarker] ?? [] {
@@ -227,6 +249,32 @@ enum DataBackupService {
             size: row.count >= 20 ? (CreatureSize(rawValue: row[19]) ?? .medium) : .medium)
     }
 
+    private static func spellRow(for spell: Spell) -> [String] {
+        [
+            spell.id.uuidString,
+            spell.name,
+            String(spell.level),
+            spell.isFocusSpell ? "true" : "false",
+            spell.details,
+            spell.aonID.map(String.init) ?? "",
+            spell.traditions.map(\.rawValue).joined(separator: ";")
+        ]
+    }
+
+    private static func parseSpell(from row: [String]) -> Spell? {
+        guard row.count >= 5, let id = UUID(uuidString: row[0]) else { return nil }
+        let aonID = row.count >= 6 && !row[5].isEmpty ? Int(row[5]) : nil
+        let traditions = row.count >= 7 ? splitList(row[6]).compactMap { SpellTradition(rawValue: $0) } : []
+        return Spell(
+            name: row[1],
+            id: id,
+            level: Int(row[2]),
+            isFocusSpell: row[3] == "true",
+            details: row[4],
+            aonID: aonID,
+            traditions: traditions)
+    }
+
     private static func splitList(_ value: String) -> [String] {
         value.isEmpty ? [] : value.split(separator: ";").map(String.init)
     }
@@ -272,7 +320,8 @@ enum DataBackupService {
     }
 
     private static func parseSections(_ text: String) throws -> [String: [[String]]] {
-        let markers = [conditionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
+        let requiredMarkers = [conditionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
+        let allMarkers = requiredMarkers + [spellsMarker]
         let rows = CSVParser.parseRows(text)
 
         var sections: [String: [[String]]] = [:]
@@ -281,7 +330,7 @@ enum DataBackupService {
 
         for row in rows {
             guard let first = row.first, !first.isEmpty || row.count > 1 else { continue }
-            if row.count == 1, markers.contains(row[0]) {
+            if row.count == 1, allMarkers.contains(row[0]) {
                 currentMarker = row[0]
                 isHeaderRow = true
                 sections[row[0]] = []
@@ -295,7 +344,7 @@ enum DataBackupService {
             sections[currentMarker, default: []].append(row)
         }
 
-        guard markers.allSatisfy({ sections[$0] != nil }) else {
+        guard requiredMarkers.allSatisfy({ sections[$0] != nil }) else {
             throw DataBackupError.invalidFormat
         }
 

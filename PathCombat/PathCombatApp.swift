@@ -16,6 +16,7 @@ struct PathCombatApp: App {
             Condition.self,
             CombatEntity.self,
             EncounterCombatEntity.self,
+            Spell.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -50,6 +51,9 @@ struct PathCombatApp: App {
                     }
                     Button("Wipe Conditions") {
                         DataBackupCommands.wipeConditions(context: sharedModelContainer.mainContext)
+                    }
+                    Button("Wipe Spells") {
+                        DataBackupCommands.wipeSpells(context: sharedModelContainer.mainContext)
                     }
                     Divider()
                     Button("Wipe All") {

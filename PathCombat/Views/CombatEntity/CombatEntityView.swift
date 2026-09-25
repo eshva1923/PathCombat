@@ -11,13 +11,14 @@ import SwiftData
 struct CombatEntityView<Entity: CombatEntityStats>: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var allConditions: [Condition]
+    @Query private var allSpells: [Spell]
     @Bindable var combatEntity: Entity
     @State private var viewModel: CombatEntityViewModel<Entity>
     @State private var tagsText: String
-    @State private var knownSpellsBuffers: [String]
-    @State private var focusSpellsBuffer: String
     @State private var speedBuffer: String
     @State private var isShowingConditionPicker = false
+    @State private var isShowingSpellPicker = false
+    @State private var isShowingFocusSpellPicker = false
     let isTemplate: Bool
     let isCollapsed: Bool
 
@@ -33,9 +34,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         self.isCollapsed = isCollapsed
         self._viewModel = State(initialValue: CombatEntityViewModel(combatEntity: combatEntity))
         self._tagsText = State(initialValue: combatEntity.tags.joined(separator: ", "))
-        let knownSpells = combatEntity.spellcasting?.knownSpells ?? Array(repeating: [], count: 11)
-        self._knownSpellsBuffers = State(initialValue: knownSpells.map { $0.joined(separator: ", ") })
-        self._focusSpellsBuffer = State(initialValue: (combatEntity.spellcasting?.focusSpells ?? []).joined(separator: ", "))
         self._speedBuffer = State(initialValue: combatEntity.speed.map { $0.displayText }.joined(separator: ", "))
     }
     
@@ -365,6 +363,18 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     focusPointsRow
+                    if isTemplate {
+                        HStack {
+                            Text("Known Spells")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Button {
+                                isShowingSpellPicker = true
+                            } label: {
+                                Icons.add
+                            }
+                        }
+                    }
                     spellRankRow(rank: 0, label: "Cantrips")
                     ForEach(1...10, id: \.self) { rank in
                         spellRankRow(rank: rank, label: "Rank \(rank)")
@@ -377,6 +387,16 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         .background(Color.elementBackground.opacity(0.25))
         .cornerRadius(8)
         .padding(.horizontal, 10)
+        .sheet(isPresented: $isShowingSpellPicker) {
+            SpellPickerSheet(isFocusSpell: false, excludedSpellIDs: Set(combatEntity.spellcasting?.knownSpellIDs ?? [])) { spell in
+                viewModel.addSpell(spell)
+            }
+        }
+        .sheet(isPresented: $isShowingFocusSpellPicker) {
+            SpellPickerSheet(isFocusSpell: true, excludedSpellIDs: Set(combatEntity.spellcasting?.focusSpellIDs ?? [])) { spell in
+                viewModel.addFocusSpell(spell)
+            }
+        }
     }
 
     private var focusPointsRow: some View {
@@ -430,8 +450,9 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
 
     @ViewBuilder
     private func spellRankRow(rank: Int, label: String) -> some View {
+        let spellsForRank = viewModel.knownSpells(rank: rank, allSpells: allSpells)
         if isTemplate {
-            HStack {
+            HStack(alignment: .top) {
                 Text(label)
                     .frame(width: 90, alignment: .leading)
                 if rank > 0 {
@@ -439,38 +460,40 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     SelectAllIntField(value: availableSlotsBinding(rank: rank), formatter: formatter)
                         .frame(width: 30)
                 }
-                TextField("Known spells (comma separated)", text: $knownSpellsBuffers[rank])
-                    .onChange(of: knownSpellsBuffers[rank]) { _, newValue in
-                        viewModel.setKnownSpells(rank: rank, from: newValue)
-                    }
+                spellTags(spellsForRank, onRemove: { viewModel.removeSpell($0) })
             }
-        } else if viewModel.availableSlots(rank: rank) > 0 || !viewModel.knownSpellsText(rank: rank).isEmpty {
-            HStack {
+        } else if viewModel.availableSlots(rank: rank) > 0 || !spellsForRank.isEmpty {
+            HStack(alignment: .top) {
                 Text(label)
                     .frame(width: 90, alignment: .leading)
                 if rank > 0 {
                     pipsStepper(value: spentSlotsBinding(rank: rank), total: viewModel.availableSlots(rank: rank))
                 }
-                Text(viewModel.knownSpellsText(rank: rank))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                spellTags(spellsForRank)
+            }
+        }
+    }
+
+    private func spellTags(_ spells: [Spell], onRemove: ((Spell) -> Void)? = nil) -> some View {
+        HStack {
+            ForEach(spells) { spell in
+                SpellTag(spell: spell, onDelete: onRemove.map { remove in { remove(spell) } })
             }
         }
     }
 
     private var focusSpellsRow: some View {
-        HStack {
+        HStack(alignment: .top) {
             Text("Focus Spells")
                 .fontWeight(.semibold)
                 .frame(width: 90, alignment: .leading)
+            spellTags(viewModel.focusSpells(allSpells: allSpells), onRemove: isTemplate ? { viewModel.removeFocusSpell($0) } : nil)
             if isTemplate {
-                TextField("Comma separated", text: $focusSpellsBuffer)
-                    .onChange(of: focusSpellsBuffer) { _, newValue in
-                        viewModel.setFocusSpells(from: newValue)
-                    }
-            } else {
-                Text(viewModel.focusSpellsText())
-                    .foregroundStyle(.secondary)
+                Button {
+                    isShowingFocusSpellPicker = true
+                } label: {
+                    Icons.add
+                }
             }
         }
     }

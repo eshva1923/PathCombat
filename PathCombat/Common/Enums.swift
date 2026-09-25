@@ -22,6 +22,7 @@ enum DieType: Int {
 enum AppSection: String, CaseIterable, Identifiable {
     case combatTracker = "Combat Tracker"
     case entitiesLibrary = "Entities Library"
+    case spellsLibrary = "Spells"
     case rulesAndConditions = "Rules and Conditions"
 
     var id: Self { self }
@@ -30,6 +31,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         switch self {
         case .combatTracker: return "shield.lefthalf.filled"
         case .entitiesLibrary: return "person.3.fill"
+        case .spellsLibrary: return "wand.and.stars"
         case .rulesAndConditions: return "book.closed.fill"
         }
     }
@@ -60,6 +62,15 @@ enum CreatureSize: String, Codable, CaseIterable, Identifiable {
     case large = "Large"
     case huge = "Huge"
     case gargantuan = "Gargantuan"
+
+    var id: Self { self }
+}
+
+enum SpellTradition: String, Codable, CaseIterable, Identifiable {
+    case arcane = "Arcane"
+    case occult = "Occult"
+    case primal = "Primal"
+    case divine = "Divine"
 
     var id: Self { self }
 }

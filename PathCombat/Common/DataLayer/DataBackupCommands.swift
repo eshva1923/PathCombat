@@ -70,6 +70,15 @@ enum DataBackupCommands {
             }
     }
 
+    static func wipeSpells(context: ModelContext) {
+        confirmAndWipe(
+            title: "Wipe all spells?",
+            message: "This will permanently delete every spell definition, and remove any entity references to them.",
+            context: context) { context in
+                try DataBackupService.wipeSpells(context: context)
+            }
+    }
+
     static func wipeAll(context: ModelContext) {
         confirmAndWipe(
             title: "Wipe all data?",

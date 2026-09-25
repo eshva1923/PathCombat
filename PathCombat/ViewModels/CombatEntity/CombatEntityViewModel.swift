@@ -173,23 +173,29 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
         combatEntity.spellcasting?.setSpentSlots(rank: rank, to: value)
     }
 
-    func knownSpellsText(rank: Int) -> String {
-        (combatEntity.spellcasting?.spells(rank: rank) ?? []).joined(separator: ", ")
+    func knownSpells(rank: Int, allSpells: [Spell]) -> [Spell] {
+        guard let ids = combatEntity.spellcasting?.knownSpellIDs else { return [] }
+        return allSpells.filter { ids.contains($0.id) && $0.level == rank }
     }
 
-    func setKnownSpells(rank: Int, from text: String) {
-        combatEntity.spellcasting?.setSpells(rank: rank, to: Self.parseList(text))
+    func focusSpells(allSpells: [Spell]) -> [Spell] {
+        guard let ids = combatEntity.spellcasting?.focusSpellIDs else { return [] }
+        return allSpells.filter { ids.contains($0.id) }
     }
 
-    func focusSpellsText() -> String {
-        (combatEntity.spellcasting?.focusSpells ?? []).joined(separator: ", ")
+    func addSpell(_ spell: Spell) {
+        combatEntity.spellcasting?.addSpell(spell.id)
     }
 
-    func setFocusSpells(from text: String) {
-        combatEntity.spellcasting?.focusSpells = Self.parseList(text)
+    func removeSpell(_ spell: Spell) {
+        combatEntity.spellcasting?.removeSpell(spell.id)
     }
 
-    private static func parseList(_ text: String) -> [String] {
-        text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    func addFocusSpell(_ spell: Spell) {
+        combatEntity.spellcasting?.addFocusSpell(spell.id)
+    }
+
+    func removeFocusSpell(_ spell: Spell) {
+        combatEntity.spellcasting?.removeFocusSpell(spell.id)
     }
 }

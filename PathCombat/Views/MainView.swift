@@ -18,6 +18,8 @@ struct MainView: View {
                 CombatTrackerView()
             case .entitiesLibrary:
                 EntitiesLibraryView()
+            case .spellsLibrary:
+                SpellsLibraryView()
             case .rulesAndConditions:
                 ConditionsLibraryView()
             }
