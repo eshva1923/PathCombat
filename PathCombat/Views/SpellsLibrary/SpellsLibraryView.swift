@@ -95,13 +95,18 @@ extension SpellsLibraryView {
 
     private func levelHeader(_ level: Int) -> some View {
         HStack {
-            Icons.spellRank(level)
-                .foregroundStyle(.secondary)
-            Spacer()
+            if level != 0 {
+                Text("Rank ")
+                Spacer()
+                Icons.spellRank(level, filled: true)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Cantrips")
+            }
         }
         .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 2)
+        .padding(.top, 10)
+        .padding(.bottom, 5)
     }
 
     private func spellRow(_ spell: Spell) -> some View {
@@ -113,6 +118,10 @@ extension SpellsLibraryView {
                     Text(spell.name)
                         .lineLimit(1)
                     Spacer()
+                    if spell.isFocusSpell {
+                        Icons.focusSpell
+                            .foregroundStyle(.secondary)
+                    }
                     Icons.spellRank(spell.level)
                         .foregroundStyle(.secondary)
                 }

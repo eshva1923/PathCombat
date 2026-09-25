@@ -72,12 +72,12 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                         }
                     }
                 }
-                speedSizeRow
-                StatRow
+                statSection
                     HStack {
                         if !isTemplate {
                             initiativeSection
                         }
+                        Spacer()
                         hpSection
 
                     }.padding(.horizontal, 10)
@@ -126,7 +126,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         .padding(.horizontal, 10)
     }
 
-    var speedSizeRow: some View {
+    var speedField: some View {
         HStack {
             Icons.speed
             Text("Speed")
@@ -141,7 +141,11 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     LabelTag(text: speed.displayText, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
             }
-            Spacer()
+        }
+    }
+    
+    var sizeField: some View {
+        HStack {
             Icons.size
             Text("Size")
                 .fontWeight(.semibold)
@@ -158,7 +162,25 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, 10)
+    }
+    
+    var hpSection: some View {
+            Group {
+                Icons.hp
+                Text("HP")
+                    .fontWeight(.bold)
+                SelectAllIntField(value: $combatEntity.hp, formatter: formatter)
+                    .fontWeight(.bold)
+                if !isTemplate {
+                    Spacer()
+                    Icons.wounds
+                    Text("Wounds")
+                        .fontWeight(.medium)
+                    SelectAllIntField(value: $combatEntity.wounds, formatter: formatter)
+                        .fontWeight(.medium)
+                }
+            }
+
     }
             
             
@@ -179,25 +201,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }
             }.frame(maxWidth: .infinity)
         }
-    }
-    
-    var hpSection: some View {
-            HStack {
-                Icons.hp
-                Text("HP")
-                    .fontWeight(.bold)
-                SelectAllIntField(value: $combatEntity.hp, formatter: formatter)
-                    .fontWeight(.bold)
-                if !isTemplate {
-                    Spacer()
-                    Icons.wounds
-                    Text("Wounds")
-                        .fontWeight(.medium)
-                    SelectAllIntField(value: $combatEntity.wounds, formatter: formatter)
-                        .fontWeight(.medium)
-                }
-            }
-
     }
 
     var deadIcon: some View {
@@ -546,55 +549,60 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             set: { newValue in viewModel.setConditionDamage(applied, to: newValue) }
         )
     }
-    
-    var StatRow: some View {
+    var statSection: some View {
         Group {
-            HStack {
-            LabelStat(
-                text: "Fortitude",
-                value: $combatEntity.fortST,
-                hoverEffect: true,
-                hoverColor: nil,
-                isEditable: isTemplate,
-                image: Icons.fortitude)
-            LabelStat(
-                text: "Reflexes",
-                value: $combatEntity.refST,
-                hoverEffect: true,
-                hoverColor: nil,
-                isEditable: isTemplate,
-                image: Icons.reflexes)
-            LabelStat(
-                text: "Will",
-                value: $combatEntity.willST,
-                hoverEffect: true,
-                hoverColor: nil,
-                isEditable: isTemplate,
-                image: Icons.will)
-            LabelStat(
-                text: "Perception",
-                value: $combatEntity.iniMod,
-                hoverEffect: true,
-                hoverColor: Color.orange,
-                isEditable: isTemplate,
-                image: Icons.perception)
-
-        }
-            HStack {
-                LabelStat(
-                    text: "AC",
-                    value: $combatEntity.ac,
-                    hoverEffect: false,
-                    hoverColor: nil,
-                    isEditable: isTemplate,
-                    image: Icons.ac)
-                LabelStat(
-                    text: "DC",
-                    value: $combatEntity.dc,
-                    hoverEffect: false,
-                    hoverColor: nil,
-                    isEditable: isTemplate,
-                    image: Icons.dc)
+            VStack {
+                HStack {
+                    LabelStat(
+                        text: "Fortitude",
+                        value: $combatEntity.fortST,
+                        hoverEffect: true,
+                        hoverColor: nil,
+                        isEditable: isTemplate,
+                        image: Icons.fortitude)
+                    LabelStat(
+                        text: "Reflexes",
+                        value: $combatEntity.refST,
+                        hoverEffect: true,
+                        hoverColor: nil,
+                        isEditable: isTemplate,
+                        image: Icons.reflexes)
+                    LabelStat(
+                        text: "Will",
+                        value: $combatEntity.willST,
+                        hoverEffect: true,
+                        hoverColor: nil,
+                        isEditable: isTemplate,
+                        image: Icons.will)
+                    Spacer()
+                    LabelStat(
+                        text: "Perception",
+                        value: $combatEntity.iniMod,
+                        hoverEffect: true,
+                        hoverColor: Color.orange,
+                        isEditable: isTemplate,
+                        image: Icons.perception)
+                }
+                HStack {
+                    LabelStat(
+                        text: "AC",
+                        value: $combatEntity.ac,
+                        hoverEffect: true,
+                        hoverColor: nil,
+                        isEditable: isTemplate,
+                        image: Icons.ac)
+                    LabelStat(
+                        text: "DC",
+                        value: $combatEntity.dc,
+                        hoverEffect: true,
+                        hoverColor: nil,
+                        isEditable: isTemplate,
+                        image: Icons.dc)
+                    Spacer()
+                    speedField
+                        .frame(maxWidth: 200)
+                    sizeField
+                }
             }
         }
     }

@@ -3,9 +3,7 @@ import Foundation
 struct Spellcasting: Codable, Hashable {
     var focusPointsTotal: Int
     var focusPointsSpent: Int
-    /// 10 entries: index 0 = rank 1 ... index 9 = rank 10 (cantrips need no slot).
     var availableSpellSlots: [Int]
-    /// 10 entries, same indexing as `availableSpellSlots`.
     var spentSpellSlots: [Int]
     var knownSpellIDs: [UUID]
     var focusSpellIDs: [UUID]
@@ -21,8 +19,6 @@ struct Spellcasting: Codable, Hashable {
         self.focusSpellIDs = focusSpellIDs
     }
 
-    // Rank-based accessors hide the array/rank offset everywhere else in the codebase.
-    // Cantrips (rank 0) need no spell slot, so slot accessors are no-ops for rank 0.
     func availableSlots(rank: Int) -> Int { rank > 0 ? availableSpellSlots[rank - 1] : 0 }
     func spentSlots(rank: Int) -> Int { rank > 0 ? spentSpellSlots[rank - 1] : 0 }
 
@@ -54,7 +50,6 @@ struct Spellcasting: Codable, Hashable {
         focusSpellIDs.removeAll { $0 == id }
     }
 
-    /// Fresh copy for a new encounter: capabilities carry over, spent counters reset to full.
     func resetForEncounter() -> Spellcasting {
         var copy = self
         copy.focusPointsSpent = 0
@@ -62,9 +57,6 @@ struct Spellcasting: Codable, Hashable {
         return copy
     }
 
-    /// Merges an updated template's capabilities into an existing encounter copy: authored
-    /// capabilities (slots, known/focus spells, focus point total) come from `template`, while
-    /// live spent counters carry over from `existing`, clamped to the template's new limits.
     static func synced(template: Spellcasting?, existing: Spellcasting?) -> Spellcasting? {
         guard var result = template else { return nil }
         if let existing {

@@ -200,9 +200,6 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
         combatEntity.spellcasting?.removeFocusSpell(spell.id)
     }
 
-    /// Pushes this template's capability fields into every existing encounter copy of it,
-    /// preserving each copy's live combat state (initiative, wounds, conditions, spent
-    /// slots/focus points). Completed encounters are left untouched as a historical record.
     func syncToEncounters(using modelContext: ModelContext) {
         guard let encounters = try? modelContext.fetch(FetchDescriptor<Encounter>()) else { return }
         let templateID = combatEntity.id

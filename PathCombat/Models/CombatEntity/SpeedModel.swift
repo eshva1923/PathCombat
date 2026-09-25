@@ -2,7 +2,6 @@ import Foundation
 
 struct Speed: Codable, Hashable {
     var value: Int
-    /// Empty string means land speed; otherwise the movement type, e.g. "swimming", "flying", "burrow".
     var type: String
 
     init(value: Int, type: String = "") {

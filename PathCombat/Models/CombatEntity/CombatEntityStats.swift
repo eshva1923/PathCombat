@@ -22,8 +22,6 @@ protocol CombatEntityStats: AnyObject, Observable {
     var spellcasting: Spellcasting? { get set }
     var speed: [Speed] { get set }
     var size: CreatureSize { get set }
-    /// The library `CombatEntity` this instance was copied from, if any. Always `nil` for a
-    /// template itself; set on `EncounterCombatEntity` copies so "Sync to Encounters" can find them.
     var sourceEntityID: UUID? { get }
 }
 

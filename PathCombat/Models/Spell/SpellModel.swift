@@ -10,7 +10,6 @@ final class Spell {
     var details: String
     var aonID: Int?
     var traditions: [SpellTradition]
-    /// Same encoding as `CombatAction.speed`: -1 = reaction, 0 = free action, 1...3 = actions.
     var speed: Int
     var range: String
     var area: String

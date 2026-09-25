@@ -1,17 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// An `NSTextField` subclass that selects all its text whenever it becomes first responder,
-/// giving these fields the "click to replace" behavior standard in native macOS apps — the
-/// first keystroke replaces the whole value instead of requiring a manual select-all or
-/// character-by-character backspacing (which fights formatter-based fields on every
-/// unparseable intermediate state, e.g. a briefly-empty number field).
 private final class FocusSelectingTextField: NSTextField {
-    /// Set when focus is gained via `becomeFirstResponder` (keyboard/programmatic focus, e.g.
-    /// Tab) so we can select-all immediately. For a mouse click, the same click's `mouseDown`
-    /// arrives right after and would otherwise collapse that selection back to a caret at the
-    /// click point, so `mouseDown` re-applies the selection *after* `super` finishes placing
-    /// the caret — selecting-all inside `becomeFirstResponder` alone loses the race.
     private var selectAllOnNextMouseDown = false
 
     override func becomeFirstResponder() -> Bool {
@@ -33,9 +23,6 @@ private final class FocusSelectingTextField: NSTextField {
     }
 }
 
-/// Shared chrome for every search field and single-value input in the app: a darker rounded
-/// background instead of the plain NSTextField look, applied once here so all call sites stay
-/// consistent.
 private extension View {
     func selectAllFieldStyle() -> some View {
         self
@@ -46,8 +33,6 @@ private extension View {
     }
 }
 
-/// A single-value text field (not for comma-separated lists) that selects all its text on
-/// focus. See `FocusSelectingTextField` for why.
 struct SelectAllTextField: View {
     var placeholder: String
     @Binding var text: String
@@ -101,9 +86,6 @@ private struct SelectAllTextFieldRepresentable: NSViewRepresentable {
     }
 }
 
-/// An `Int`-valued text field that selects all its text on focus. Tolerates transient
-/// unparseable states while editing (e.g. briefly empty) without fighting the user's
-/// keystrokes, and snaps back to the canonical formatted value once editing ends.
 struct SelectAllIntField: View {
     @Binding var value: Int
     let formatter: NumberFormatter
