@@ -27,6 +27,10 @@ struct CombatTrackerView: View {
         encounters.filter { $0.matchesSearch(searchText) }
     }
 
+    private var groupedEncounters: [(session: Int, encounters: [Encounter])] {
+        viewModel.groupedBySession(filteredEncounters)
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             VStack(spacing: 0) {
@@ -34,9 +38,12 @@ struct CombatTrackerView: View {
                 Divider()
                 ScrollView(.vertical) {
                     VStack(spacing: 0) {
-                        ForEach(filteredEncounters) { encounter in
-                            encounterRow(encounter)
-                            Divider()
+                        ForEach(groupedEncounters, id: \.session) { group in
+                            sessionHeader(group.session)
+                            ForEach(group.encounters) { encounter in
+                                encounterRow(encounter)
+                                Divider()
+                            }
                         }
                         addEncounterRow.padding(4)
                     }
@@ -88,6 +95,17 @@ extension CombatTrackerView {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
+    }
+
+    private func sessionHeader(_ session: Int) -> some View {
+        Text("Session \(session)")
+            .font(.caption)
+            .fontWeight(.bold)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
+            .padding(.bottom, 2)
     }
 
     private func encounterRow(_ encounter: Encounter) -> some View {

@@ -7,14 +7,29 @@ import AppKit
 /// character-by-character backspacing (which fights formatter-based fields on every
 /// unparseable intermediate state, e.g. a briefly-empty number field).
 private final class FocusSelectingTextField: NSTextField {
+    /// Set when focus is gained via `becomeFirstResponder` (keyboard/programmatic focus, e.g.
+    /// Tab) so we can select-all immediately. For a mouse click, the same click's `mouseDown`
+    /// arrives right after and would otherwise collapse that selection back to a caret at the
+    /// click point, so `mouseDown` re-applies the selection *after* `super` finishes placing
+    /// the caret — selecting-all inside `becomeFirstResponder` alone loses the race.
+    private var selectAllOnNextMouseDown = false
+
     override func becomeFirstResponder() -> Bool {
         let result = super.becomeFirstResponder()
         if result {
-            DispatchQueue.main.async { [weak self] in
-                self?.currentEditor()?.selectAll(nil)
-            }
+            selectAllOnNextMouseDown = true
+            currentEditor()?.selectAll(nil)
         }
         return result
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let shouldReselect = selectAllOnNextMouseDown
+        selectAllOnNextMouseDown = false
+        super.mouseDown(with: event)
+        if shouldReselect {
+            currentEditor()?.selectAll(nil)
+        }
     }
 }
 

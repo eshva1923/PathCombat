@@ -21,11 +21,13 @@ final class EncounterCombatEntity: Equatable {
     var role: CombatRole
     var actions: [CombatAction]
     var spellcasting: Spellcasting?
+    var speed: [Speed]
+    var size: CreatureSize
 
     init(id: UUID?, name: String, level: Int, iniMod: Int, currentIni: Int, hp: Int, wounds: Int,
          tags: [String], currentConditions: [String], affectingConditions: [AppliedCondition],
          ac: Int, fortST: Int, refST: Int, willST: Int, dc: Int, role: CombatRole, actions: [CombatAction],
-         spellcasting: Spellcasting? = nil) {
+         spellcasting: Spellcasting? = nil, speed: [Speed] = Speed.defaultLandSpeed, size: CreatureSize = .medium) {
         self.id = id ?? UUID()
         self.name = name
         self.level = level
@@ -44,6 +46,8 @@ final class EncounterCombatEntity: Equatable {
         self.role = role
         self.actions = actions
         self.spellcasting = spellcasting
+        self.speed = speed
+        self.size = size
     }
 }
 

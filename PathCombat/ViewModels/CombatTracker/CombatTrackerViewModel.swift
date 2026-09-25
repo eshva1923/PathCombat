@@ -37,4 +37,11 @@ final class CombatTrackerViewModel {
         }
         return AppSection.combatTracker.rawValue
     }
+
+    func groupedBySession(_ encounters: [Encounter]) -> [(session: Int, encounters: [Encounter])] {
+        let grouped = Dictionary(grouping: encounters, by: { $0.session })
+        return grouped.keys.sorted(by: >).map { session in
+            (session: session, encounters: grouped[session, default: []].sorted { $0.date < $1.date })
+        }
+    }
 }

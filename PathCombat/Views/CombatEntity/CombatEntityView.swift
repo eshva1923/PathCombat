@@ -16,6 +16,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     @State private var tagsText: String
     @State private var knownSpellsBuffers: [String]
     @State private var focusSpellsBuffer: String
+    @State private var speedBuffer: String
     @State private var isShowingConditionPicker = false
     let isTemplate: Bool
     let isCollapsed: Bool
@@ -35,6 +36,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         let knownSpells = combatEntity.spellcasting?.knownSpells ?? Array(repeating: [], count: 11)
         self._knownSpellsBuffers = State(initialValue: knownSpells.map { $0.joined(separator: ", ") })
         self._focusSpellsBuffer = State(initialValue: (combatEntity.spellcasting?.focusSpells ?? []).joined(separator: ", "))
+        self._speedBuffer = State(initialValue: combatEntity.speed.map { $0.displayText }.joined(separator: ", "))
     }
     
     var body: some View {
@@ -65,6 +67,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                         }
                     }
                 }
+                speedSizeRow
                 StatRow
                     HStack {
                         if !isTemplate {
@@ -114,6 +117,41 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 .onChange(of: tagsText) { _, newValue in
                     viewModel.updateTags(from: newValue)
                 }
+        }
+        .padding(.horizontal, 10)
+    }
+
+    var speedSizeRow: some View {
+        HStack {
+            Icons.speed
+            Text("Speed")
+                .fontWeight(.semibold)
+            if isTemplate {
+                TextField("Speed (e.g. 30, 45 swimming)", text: $speedBuffer)
+                    .onChange(of: speedBuffer) { _, newValue in
+                        viewModel.setSpeed(from: newValue)
+                    }
+            } else {
+                ForEach(combatEntity.speed, id: \.self) { speed in
+                    LabelTag(text: speed.displayText, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                }
+            }
+            Spacer()
+            Icons.size
+            Text("Size")
+                .fontWeight(.semibold)
+            if isTemplate {
+                Picker("Size", selection: $combatEntity.size) {
+                    ForEach(CreatureSize.allCases) { size in
+                        Text(size.rawValue).tag(size)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 110)
+            } else {
+                Text(combatEntity.size.rawValue)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 10)
     }
@@ -355,9 +393,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 .labelsHidden()
                 .frame(width: 70)
             } else {
-                Stepper(value: focusPointsSpentBinding, in: 0...viewModel.focusPointsTotal()) {
-                    pips(spent: viewModel.focusPointsSpent(), total: viewModel.focusPointsTotal())
-                }
+                pipsStepper(value: focusPointsSpentBinding, total: viewModel.focusPointsTotal())
             }
         }
     }
@@ -367,6 +403,28 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             ForEach(0..<total, id: \.self) { index in
                 Image(systemName: index < spent ? "circle.fill" : "circle")
             }
+        }
+    }
+
+    private func pipsStepper(value: Binding<Int>, total: Int) -> some View {
+        HStack(spacing: 4) {
+            Button {
+                value.wrappedValue = max(0, value.wrappedValue - 1)
+            } label: {
+                Image(systemName: "minus.circle")
+            }
+            .buttonStyle(.plain)
+            .disabled(value.wrappedValue <= 0)
+
+            pips(spent: value.wrappedValue, total: total)
+
+            Button {
+                value.wrappedValue = min(total, value.wrappedValue + 1)
+            } label: {
+                Image(systemName: "plus.circle")
+            }
+            .buttonStyle(.plain)
+            .disabled(value.wrappedValue >= total)
         }
     }
 
@@ -391,9 +449,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 Text(label)
                     .frame(width: 90, alignment: .leading)
                 if rank > 0 {
-                    Stepper(value: spentSlotsBinding(rank: rank), in: 0...viewModel.availableSlots(rank: rank)) {
-                        pips(spent: viewModel.spentSlots(rank: rank), total: viewModel.availableSlots(rank: rank))
-                    }
+                    pipsStepper(value: spentSlotsBinding(rank: rank), total: viewModel.availableSlots(rank: rank))
                 }
                 Text(viewModel.knownSpellsText(rank: rank))
                     .foregroundStyle(.secondary)

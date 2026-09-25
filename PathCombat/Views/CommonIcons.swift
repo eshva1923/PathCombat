@@ -26,4 +26,6 @@ struct Icons {
     static let perception = Image(systemName: "eye")
     static let ac = Image(systemName: "shield.lefthalf.filled")
     static let dc = Image(systemName: "hurricane")
+    static let speed = Image(systemName: "hare.fill")
+    static let size = Image(systemName: "ruler.fill")
 }

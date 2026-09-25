@@ -96,6 +96,14 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
             .filter { !$0.isEmpty }
     }
 
+    func speedText() -> String {
+        combatEntity.speed.map { $0.displayText }.joined(separator: ", ")
+    }
+
+    func setSpeed(from text: String) {
+        combatEntity.speed = Speed.parseList(text)
+    }
+
     func addAction() {
         combatEntity.actions.append(CombatAction(name: "New Action"))
     }

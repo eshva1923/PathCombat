@@ -20,6 +20,8 @@ protocol CombatEntityStats: AnyObject, Observable {
     var role: CombatRole { get set }
     var actions: [CombatAction] { get set }
     var spellcasting: Spellcasting? { get set }
+    var speed: [Speed] { get set }
+    var size: CreatureSize { get set }
 }
 
 extension CombatEntityStats {

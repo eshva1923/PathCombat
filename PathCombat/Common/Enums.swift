@@ -53,6 +53,17 @@ enum ActionTarget: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum CreatureSize: String, Codable, CaseIterable, Identifiable {
+    case tiny = "Tiny"
+    case small = "Small"
+    case medium = "Medium"
+    case large = "Large"
+    case huge = "Huge"
+    case gargantuan = "Gargantuan"
+
+    var id: Self { self }
+}
+
 enum CombatRole: String, Codable, CaseIterable, Identifiable {
     case spellcaster, attacker, tank, support, pc, boss, minion
 

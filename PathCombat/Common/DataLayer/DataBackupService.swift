@@ -21,7 +21,8 @@ enum DataBackupService {
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
-        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting"
+        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
+        "speed", "size"
     ]
     private static let encountersHeader = [
         "id", "name", "date", "completed", "currentInitiative", "elapsedCombatRounds",
@@ -170,7 +171,9 @@ enum DataBackupService {
             String(entity.dc),
             entity.role.rawValue,
             encodeActions(entity.actions),
-            encodeSpellcasting(entity.spellcasting)
+            encodeSpellcasting(entity.spellcasting),
+            encodeSpeed(entity.speed),
+            entity.size.rawValue
         ]
     }
 
@@ -194,7 +197,9 @@ enum DataBackupService {
             affectingConditions: decodeAppliedConditions(row[9]),
             role: row.count >= 16 ? CombatRole(rawValue: row[15]) : nil,
             actions: row.count >= 17 ? decodeActions(row[16]) : nil,
-            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil)
+            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil,
+            speed: row.count >= 19 ? decodeSpeed(row[18]) : nil,
+            size: row.count >= 20 ? CreatureSize(rawValue: row[19]) : nil)
     }
 
     private static func parseEncounterCombatEntity(from row: [String]) -> EncounterCombatEntity? {
@@ -217,7 +222,9 @@ enum DataBackupService {
             dc: Int(row[14]) ?? 10,
             role: row.count >= 16 ? (CombatRole(rawValue: row[15]) ?? .attacker) : .attacker,
             actions: row.count >= 17 ? decodeActions(row[16]) : [],
-            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil)
+            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil,
+            speed: row.count >= 19 ? decodeSpeed(row[18]) : Speed.defaultLandSpeed,
+            size: row.count >= 20 ? (CreatureSize(rawValue: row[19]) ?? .medium) : .medium)
     }
 
     private static func splitList(_ value: String) -> [String] {
@@ -247,6 +254,16 @@ enum DataBackupService {
     private static func decodeSpellcasting(_ value: String) -> Spellcasting? {
         guard !value.isEmpty, let data = value.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(Spellcasting.self, from: data)
+    }
+
+    private static func encodeSpeed(_ speed: [Speed]) -> String {
+        guard let data = try? JSONEncoder().encode(speed) else { return "[]" }
+        return String(data: data, encoding: .utf8) ?? "[]"
+    }
+
+    private static func decodeSpeed(_ value: String) -> [Speed] {
+        guard !value.isEmpty, let data = value.data(using: .utf8) else { return Speed.defaultLandSpeed }
+        return (try? JSONDecoder().decode([Speed].self, from: data)) ?? Speed.defaultLandSpeed
     }
 
     private static func decodeAppliedConditions(_ value: String) -> [AppliedCondition] {
