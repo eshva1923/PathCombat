@@ -71,6 +71,7 @@ enum SpellTradition: String, Codable, CaseIterable, Identifiable {
     case occult = "Occult"
     case primal = "Primal"
     case divine = "Divine"
+    case elemental = "Elemental"
 
     var id: Self { self }
 }

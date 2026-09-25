@@ -18,6 +18,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     @State private var speedBuffer: String
     @State private var isShowingConditionPicker = false
     @State private var isShowingSpellPicker = false
+    @State private var spellPickerRank = 0
     @State private var isShowingFocusSpellPicker = false
     let isTemplate: Bool
     let isCollapsed: Bool
@@ -373,18 +374,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             } else {
                 VStack(alignment: .leading, spacing: 6) {
                     focusPointsRow
-                    if isTemplate {
-                        HStack {
-                            Text("Known Spells")
-                                .fontWeight(.semibold)
-                            Spacer()
-                            Button {
-                                isShowingSpellPicker = true
-                            } label: {
-                                Icons.add
-                            }
-                        }
-                    }
                     spellRankRow(rank: 0)
                     ForEach(1...10, id: \.self) { rank in
                         spellRankRow(rank: rank)
@@ -398,7 +387,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         .cornerRadius(8)
         .padding(.horizontal, 10)
         .sheet(isPresented: $isShowingSpellPicker) {
-            SpellPickerSheet(isFocusSpell: false, excludedSpellIDs: Set(combatEntity.spellcasting?.knownSpellIDs ?? [])) { spell in
+            SpellPickerSheet(isFocusSpell: false, level: spellPickerRank, excludedSpellIDs: Set(combatEntity.spellcasting?.knownSpellIDs ?? [])) { spell in
                 viewModel.addSpell(spell)
             }
         }
@@ -471,6 +460,15 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                         .frame(width: 30)
                 }
                 spellTags(spellsForRank, onRemove: { viewModel.removeSpell($0) })
+                if rank == 0 || viewModel.availableSlots(rank: rank) > 0 {
+                    Button {
+                        spellPickerRank = rank
+                        isShowingSpellPicker = true
+                    } label: {
+                        Icons.add
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         } else if viewModel.availableSlots(rank: rank) > 0 || !spellsForRank.isEmpty {
             HStack(alignment: .top) {
@@ -498,7 +496,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 .fontWeight(.semibold)
                 .frame(width: 90, alignment: .leading)
             spellTags(viewModel.focusSpells(allSpells: allSpells), onRemove: isTemplate ? { viewModel.removeFocusSpell($0) } : nil)
-            if isTemplate {
+            if isTemplate && viewModel.focusPointsTotal() > 0 {
                 Button {
                     isShowingFocusSpellPicker = true
                 } label: {

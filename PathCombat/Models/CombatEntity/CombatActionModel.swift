@@ -31,7 +31,7 @@ struct CombatAction: Codable, Identifiable, Hashable {
         CombatAction(name: "Melee")
     }
 
-    static let speedValues = [-1, 0, 1, 2, 3]
+    static let speedValues = [-1, 0, 1, 2, 3, 4]
 
     static func speedSymbol(for speed: Int) -> String {
         switch speed {
@@ -39,16 +39,18 @@ struct CombatAction: Codable, Identifiable, Hashable {
         case 1: "􀋁"
         case 2: "􀋁􀋁"
         case 3: "􀋁􀋁􀋁"
+        case 4: "􀋂"
         default: "􀋀"
         }
     }
-    
+
     static func displayText(for speed: Int) -> String {
         switch speed {
         case -1: "Reaction"
         case 1: "Single action"
         case 2: "Two actions"
         case 3: "Three actions"
+        case 4: "Special"
         default: "Free action"
         }
     }

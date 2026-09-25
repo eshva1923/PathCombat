@@ -33,6 +33,10 @@ final class SpellsLibraryViewModel {
         }
     }
 
+    func updateTags(on spell: Spell, from text: String) {
+        spell.tags = text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    }
+
     func toggleTradition(_ tradition: SpellTradition, on spell: Spell) {
         if let index = spell.traditions.firstIndex(of: tradition) {
             spell.traditions.remove(at: index)

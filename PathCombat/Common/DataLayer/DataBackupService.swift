@@ -20,7 +20,7 @@ enum DataBackupService {
     private static let encountersMarker = "#Encounters"
 
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
-    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area"]
+    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area", "tags"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
         "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
@@ -262,7 +262,8 @@ enum DataBackupService {
             spell.traditions.map(\.rawValue).joined(separator: ";"),
             String(spell.speed),
             spell.range,
-            spell.area
+            spell.area,
+            spell.tags.joined(separator: ";")
         ]
     }
 
@@ -280,7 +281,8 @@ enum DataBackupService {
             traditions: traditions,
             speed: row.count >= 8 ? Int(row[7]) : nil,
             range: row.count >= 9 ? row[8] : nil,
-            area: row.count >= 10 ? row[9] : nil)
+            area: row.count >= 10 ? row[9] : nil,
+            tags: row.count >= 11 ? splitList(row[10]) : nil)
     }
 
     private static func splitList(_ value: String) -> [String] {

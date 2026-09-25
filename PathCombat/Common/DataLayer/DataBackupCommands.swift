@@ -43,6 +43,32 @@ enum DataBackupCommands {
         }
     }
 
+    static func importSpellsFromAoN(context: ModelContext) {
+        let confirmation = NSAlert()
+        confirmation.messageText = "Import Spells from Archive of Nethys?"
+        confirmation.informativeText = "Downloads the current Pathfinder 2e spell list (about 1,800 spells) from 2e.aonprd.com and adds them to your Spells Library. Spells already imported from Archive of Nethys are refreshed to match the latest data; spells you created yourself are not affected."
+        confirmation.alertStyle = .informational
+        confirmation.addButton(withTitle: "Import")
+        confirmation.addButton(withTitle: "Cancel")
+        guard confirmation.runModal() == .alertFirstButtonReturn else { return }
+
+        Task {
+            do {
+                let count = try await AoNSpellImportService.importSpells(context: context)
+                await MainActor.run {
+                    let alert = NSAlert()
+                    alert.messageText = "Import Complete"
+                    alert.informativeText = "Imported \(count) spells from Archive of Nethys."
+                    alert.runModal()
+                }
+            } catch {
+                await MainActor.run {
+                    presentError(error, title: "Import Failed")
+                }
+            }
+        }
+    }
+
     static func wipeEncounters(context: ModelContext) {
         confirmAndWipe(
             title: "Wipe all encounters?",

@@ -5,6 +5,7 @@ struct SpellPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var librarySpells: [Spell]
     let isFocusSpell: Bool
+    var level: Int? = nil
     let excludedSpellIDs: Set<UUID>
     let onAdd: (Spell) -> Void
 
@@ -15,13 +16,20 @@ struct SpellPickerSheet: View {
     private var availableSpells: [Spell] {
         librarySpells
             .filter { $0.isFocusSpell == isFocusSpell && !excludedSpellIDs.contains($0.id) }
+            .filter { level == nil || $0.level == level }
             .filter { $0.matchesSearch(searchText) }
             .sorted { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
     }
 
+    private var title: String {
+        if isFocusSpell { return "Add Focus Spell" }
+        guard let level else { return "Add Spell" }
+        return level == 0 ? "Add Cantrip" : "Add Rank \(level) Spell"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            Text(isFocusSpell ? "Add Focus Spell" : "Add Spell")
+            Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding()
@@ -48,7 +56,7 @@ struct SpellPickerSheet: View {
                 Spacer()
             } else {
                 ScrollView {
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0) {
                         ForEach(availableSpells) { spell in
                             spellRow(spell)
                             Divider()
@@ -88,10 +96,12 @@ struct SpellPickerSheet: View {
                 ForEach(spell.traditions) { tradition in
                     LabelTag(text: tradition.rawValue, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
-                Icons.spellRank(spell.level)
-                    .padding(3)
-                    .background(Color.brown)
-                    .cornerRadius(5)
+                if level == nil {
+                    Icons.spellRank(spell.level)
+                        .padding(3)
+                        .background(Color.brown)
+                        .cornerRadius(5)
+                }
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 10)

@@ -9,6 +9,7 @@ struct SpellsLibraryView: View {
     @State private var hoveredSpellID: UUID?
     @State private var selectedSpellID: UUID?
     @State private var searchText = ""
+    @State private var expandedLevel: Int?
 
     let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -32,12 +33,17 @@ struct SpellsLibraryView: View {
                 searchField
                 Divider()
                 ScrollView(.vertical) {
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
                         ForEach(groupedSpells, id: \.level) { group in
-                            levelHeader(group.level)
-                            ForEach(group.spells) { spell in
-                                spellRow(spell)
-                                Divider()
+                            Section {
+                                if !searchText.isEmpty || expandedLevel == group.level {
+                                    ForEach(group.spells) { spell in
+                                        spellRow(spell)
+                                        Divider()
+                                    }
+                                }
+                            } header: {
+                                levelHeader(group.level)
                             }
                         }
                         addSpellRow
@@ -53,7 +59,7 @@ struct SpellsLibraryView: View {
         } detail: {
             if let selectedSpellID,
                let spell = spells.first(where: { $0.id == selectedSpellID }) {
-                spellDetail(spell)
+                SpellDetailView(spell: spell, allSpells: spells, viewModel: viewModel, formatter: formatter)
                     .id(spell.id)
             } else {
                 createSpellButton
@@ -69,6 +75,10 @@ struct SpellsLibraryView: View {
         .onAppear {
             if selectedSpellID == nil {
                 selectedSpellID = spells.first?.id
+            }
+            if expandedLevel == nil {
+                let selected = spells.first(where: { $0.id == selectedSpellID })
+                expandedLevel = selected?.level ?? groupedSpells.first?.level
             }
         }
     }
@@ -94,19 +104,29 @@ extension SpellsLibraryView {
     }
 
     private func levelHeader(_ level: Int) -> some View {
-        HStack {
-            if level != 0 {
-                Text("Rank ")
-                Spacer()
-                Icons.spellRank(level, filled: true)
+        Button {
+            expandedLevel = expandedLevel == level ? nil : level
+        } label: {
+            HStack {
+                if level != 0 {
+                    Text("Rank ")
+                    Spacer()
+                    Icons.spellRank(level, filled: true)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Cantrips")
+                    Spacer()
+                }
+                Image(systemName: "chevron.right")
+                    .rotationEffect(.degrees(expandedLevel == level ? 90 : 0))
                     .foregroundStyle(.secondary)
-            } else {
-                Text("Cantrips")
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .background(Color.elementBackground)
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 10)
-        .padding(.bottom, 5)
+        .buttonStyle(.plain)
     }
 
     private func spellRow(_ spell: Spell) -> some View {
@@ -156,6 +176,7 @@ extension SpellsLibraryView {
         Button {
             let newSpell = viewModel.addSpell(using: modelContext)
             selectedSpellID = newSpell.id
+            expandedLevel = newSpell.level
         } label: {
             HStack {
                 Spacer()
@@ -182,23 +203,32 @@ extension SpellsLibraryView {
         .buttonStyle(.plain)
     }
 
-    private func aonIDBinding(for spell: Spell) -> Binding<String> {
-        Binding(
-            get: { spell.aonID.map(String.init) ?? "" },
-            set: { newValue in spell.aonID = Int(newValue.trimmingCharacters(in: .whitespaces)) }
-        )
+}
+
+private struct SpellDetailView: View {
+    @Bindable var spell: Spell
+    let allSpells: [Spell]
+    let viewModel: SpellsLibraryViewModel
+    let formatter: NumberFormatter
+    @State private var tagsBuffer: String
+
+    init(spell: Spell, allSpells: [Spell], viewModel: SpellsLibraryViewModel, formatter: NumberFormatter) {
+        self.spell = spell
+        self.allSpells = allSpells
+        self.viewModel = viewModel
+        self.formatter = formatter
+        self._tagsBuffer = State(initialValue: spell.tags.joined(separator: ", "))
     }
 
-    private func spellDetail(_ spell: Spell) -> some View {
-        @Bindable var spell = spell
-        return ScrollView {
+    var body: some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 SelectAllTextField("Spell name", text: $spell.name)
                     .font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
                     .textFieldStyle(.plain)
-                if let warning = viewModel.duplicateNameWarning(for: spell, in: spells) {
+                if let warning = viewModel.duplicateNameWarning(for: spell, in: allSpells) {
                     Text(warning)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -234,8 +264,21 @@ extension SpellsLibraryView {
                     Text("Traditions")
                         .fontWeight(.semibold)
                     ForEach(SpellTradition.allCases) { tradition in
-                        traditionToggle(tradition, on: spell)
+                        traditionToggle(tradition)
                     }
+                }
+                HStack {
+                    Image(systemName: "tag")
+                    ForEach(spell.tags, id: \.self) { tag in
+                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                    }
+                }
+                HStack {
+                    Image(systemName: "tag")
+                    TextField("Tags (comma separated)", text: $tagsBuffer)
+                        .onChange(of: tagsBuffer) { _, newValue in
+                            viewModel.updateTags(on: spell, from: newValue)
+                        }
                 }
                 Divider()
                 Text("Description")
@@ -246,13 +289,13 @@ extension SpellsLibraryView {
                 HStack {
                     Text("Archive of Nethys ID")
                         .fontWeight(.semibold)
-                    SelectAllTextField("e.g. 1261", text: aonIDBinding(for: spell))
+                    SelectAllTextField("e.g. 1261", text: aonIDBinding)
                         .frame(width: 80)
                     if let aonURL = spell.aonURL {
                         Link("View on Archive of Nethys", destination: aonURL)
                     }
                 }
-                if let warning = viewModel.duplicateAonIDWarning(for: spell, in: spells) {
+                if let warning = viewModel.duplicateAonIDWarning(for: spell, in: allSpells) {
                     Text(warning)
                         .font(.caption)
                         .foregroundStyle(.orange)
@@ -262,7 +305,14 @@ extension SpellsLibraryView {
         }
     }
 
-    private func traditionToggle(_ tradition: SpellTradition, on spell: Spell) -> some View {
+    private var aonIDBinding: Binding<String> {
+        Binding(
+            get: { spell.aonID.map(String.init) ?? "" },
+            set: { newValue in spell.aonID = Int(newValue.trimmingCharacters(in: .whitespaces)) }
+        )
+    }
+
+    private func traditionToggle(_ tradition: SpellTradition) -> some View {
         let isSelected = spell.traditions.contains(tradition)
         return Button {
             viewModel.toggleTradition(tradition, on: spell)
