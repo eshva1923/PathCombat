@@ -22,8 +22,8 @@ struct SpellsLibraryView: View {
         static let maxSplitViewWidth = 220.0
     }
 
-    private var filteredSpells: [Spell] {
-        spells.filter { $0.matchesSearch(searchText) }.sorted { $0.name < $1.name }
+    private var groupedSpells: [(level: Int, spells: [Spell])] {
+        viewModel.groupedByLevel(spells.filter { $0.matchesSearch(searchText) })
     }
 
     var body: some View {
@@ -33,9 +33,12 @@ struct SpellsLibraryView: View {
                 Divider()
                 ScrollView(.vertical) {
                     VStack(spacing: 0) {
-                        ForEach(filteredSpells) { spell in
-                            spellRow(spell)
-                            Divider()
+                        ForEach(groupedSpells, id: \.level) { group in
+                            levelHeader(group.level)
+                            ForEach(group.spells) { spell in
+                                spellRow(spell)
+                                Divider()
+                            }
                         }
                         addSpellRow
                     }
@@ -90,6 +93,17 @@ extension SpellsLibraryView {
         .padding(.vertical, 8)
     }
 
+    private func levelHeader(_ level: Int) -> some View {
+        HStack {
+            Icons.spellRank(level)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
+    }
+
     private func spellRow(_ spell: Spell) -> some View {
         HStack {
             Button {
@@ -99,7 +113,7 @@ extension SpellsLibraryView {
                     Text(spell.name)
                         .lineLimit(1)
                     Spacer()
-                    Text(spell.level == 0 ? "Cantrip" : "Rank \(spell.level)")
+                    Icons.spellRank(spell.level)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -187,6 +201,25 @@ extension SpellsLibraryView {
                         .frame(width: 40)
                     Toggle("Focus Spell", isOn: $spell.isFocusSpell)
                         .padding(.leading)
+                }
+                HStack {
+                    Text("Speed")
+                        .fontWeight(.semibold)
+                    Picker("Speed", selection: $spell.speed) {
+                        ForEach(CombatAction.speedValues, id: \.self) { speed in
+                            Text(CombatAction.displayText(for: speed) + " " + CombatAction.speedSymbol(for: speed)).tag(speed)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 180)
+                }
+                HStack {
+                    Text("Range")
+                        .fontWeight(.semibold)
+                    SelectAllTextField("e.g. 30 feet", text: $spell.range)
+                    Text("Area")
+                        .fontWeight(.semibold)
+                    SelectAllTextField("e.g. 15-foot cone", text: $spell.area)
                 }
                 HStack {
                     Text("Traditions")

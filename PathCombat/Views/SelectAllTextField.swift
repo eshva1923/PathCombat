@@ -33,9 +33,22 @@ private final class FocusSelectingTextField: NSTextField {
     }
 }
 
+/// Shared chrome for every search field and single-value input in the app: a darker rounded
+/// background instead of the plain NSTextField look, applied once here so all call sites stay
+/// consistent.
+private extension View {
+    func selectAllFieldStyle() -> some View {
+        self
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.secondary.opacity(0.15))
+            .cornerRadius(5)
+    }
+}
+
 /// A single-value text field (not for comma-separated lists) that selects all its text on
 /// focus. See `FocusSelectingTextField` for why.
-struct SelectAllTextField: NSViewRepresentable {
+struct SelectAllTextField: View {
     var placeholder: String
     @Binding var text: String
 
@@ -43,6 +56,16 @@ struct SelectAllTextField: NSViewRepresentable {
         self.placeholder = placeholder
         self._text = text
     }
+
+    var body: some View {
+        SelectAllTextFieldRepresentable(placeholder: placeholder, text: $text)
+            .selectAllFieldStyle()
+    }
+}
+
+private struct SelectAllTextFieldRepresentable: NSViewRepresentable {
+    var placeholder: String
+    @Binding var text: String
 
     func makeNSView(context: Context) -> NSTextField {
         let field = FocusSelectingTextField()
@@ -81,7 +104,17 @@ struct SelectAllTextField: NSViewRepresentable {
 /// An `Int`-valued text field that selects all its text on focus. Tolerates transient
 /// unparseable states while editing (e.g. briefly empty) without fighting the user's
 /// keystrokes, and snaps back to the canonical formatted value once editing ends.
-struct SelectAllIntField: NSViewRepresentable {
+struct SelectAllIntField: View {
+    @Binding var value: Int
+    let formatter: NumberFormatter
+
+    var body: some View {
+        SelectAllIntFieldRepresentable(value: $value, formatter: formatter)
+            .selectAllFieldStyle()
+    }
+}
+
+private struct SelectAllIntFieldRepresentable: NSViewRepresentable {
     @Binding var value: Int
     let formatter: NumberFormatter
 

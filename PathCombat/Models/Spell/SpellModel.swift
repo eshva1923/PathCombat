@@ -10,9 +10,14 @@ final class Spell {
     var details: String
     var aonID: Int?
     var traditions: [SpellTradition]
+    /// Same encoding as `CombatAction.speed`: -1 = reaction, 0 = free action, 1...3 = actions.
+    var speed: Int
+    var range: String
+    var area: String
 
     init(name: String?, id: UUID?, level: Int?, isFocusSpell: Bool?, details: String?,
-         aonID: Int? = nil, traditions: [SpellTradition]? = nil) {
+         aonID: Int? = nil, traditions: [SpellTradition]? = nil, speed: Int? = nil,
+         range: String? = nil, area: String? = nil) {
         self.id = id ?? UUID()
         self.name = name ?? "Unnamed spell"
         self.level = level ?? 0
@@ -20,6 +25,9 @@ final class Spell {
         self.details = details ?? ""
         self.aonID = aonID
         self.traditions = traditions ?? []
+        self.speed = speed ?? 1
+        self.range = range ?? ""
+        self.area = area ?? ""
     }
 
     static func new() -> Spell {

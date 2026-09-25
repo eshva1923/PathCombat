@@ -61,4 +61,18 @@ struct Spellcasting: Codable, Hashable {
         copy.spentSpellSlots = Array(repeating: 0, count: 10)
         return copy
     }
+
+    /// Merges an updated template's capabilities into an existing encounter copy: authored
+    /// capabilities (slots, known/focus spells, focus point total) come from `template`, while
+    /// live spent counters carry over from `existing`, clamped to the template's new limits.
+    static func synced(template: Spellcasting?, existing: Spellcasting?) -> Spellcasting? {
+        guard var result = template else { return nil }
+        if let existing {
+            result.focusPointsSpent = min(existing.focusPointsSpent, result.focusPointsTotal)
+            for rank in 1...10 {
+                result.setSpentSlots(rank: rank, to: min(existing.spentSlots(rank: rank), result.availableSlots(rank: rank)))
+            }
+        }
+        return result
+    }
 }

@@ -8,6 +8,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import SwiftData
 
 @Observable
 final class CombatEntityViewModel<Entity: CombatEntityStats> {
@@ -197,5 +198,32 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
 
     func removeFocusSpell(_ spell: Spell) {
         combatEntity.spellcasting?.removeFocusSpell(spell.id)
+    }
+
+    /// Pushes this template's capability fields into every existing encounter copy of it,
+    /// preserving each copy's live combat state (initiative, wounds, conditions, spent
+    /// slots/focus points). Completed encounters are left untouched as a historical record.
+    func syncToEncounters(using modelContext: ModelContext) {
+        guard let encounters = try? modelContext.fetch(FetchDescriptor<Encounter>()) else { return }
+        let templateID = combatEntity.id
+        for encounter in encounters where !encounter.completed {
+            for entity in encounter.combatEntities where entity.sourceEntityID == templateID {
+                entity.name = combatEntity.name
+                entity.level = combatEntity.level
+                entity.iniMod = combatEntity.iniMod
+                entity.hp = combatEntity.hp
+                entity.tags = combatEntity.tags
+                entity.ac = combatEntity.ac
+                entity.fortST = combatEntity.fortST
+                entity.refST = combatEntity.refST
+                entity.willST = combatEntity.willST
+                entity.dc = combatEntity.dc
+                entity.role = combatEntity.role
+                entity.actions = combatEntity.actions
+                entity.speed = combatEntity.speed
+                entity.size = combatEntity.size
+                entity.spellcasting = Spellcasting.synced(template: combatEntity.spellcasting, existing: entity.spellcasting)
+            }
+        }
     }
 }

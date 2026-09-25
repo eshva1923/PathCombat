@@ -181,9 +181,20 @@ struct SpellTag: View {
                         Text(spell.name)
                             .font(.title2)
                             .fontWeight(.bold)
-                        Text(spell.level == 0 ? "Cantrip" : "Rank \(spell.level)")
+                        Icons.spellRank(spell.level)
                             .foregroundStyle(.secondary)
                     }
+                    HStack {
+                        Text(CombatAction.speedSymbol(for: spell.speed))
+                        if !spell.range.isEmpty {
+                            Text("Range: \(spell.range)")
+                        }
+                        if !spell.area.isEmpty {
+                            Text("Area: \(spell.area)")
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     if !spell.traditions.isEmpty {
                         HStack {
                             ForEach(spell.traditions) { tradition in

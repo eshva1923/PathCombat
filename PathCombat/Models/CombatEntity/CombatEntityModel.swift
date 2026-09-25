@@ -79,7 +79,8 @@ final class CombatEntity: Equatable {
             actions: actions,
             spellcasting: spellcasting?.resetForEncounter(),
             speed: speed,
-            size: size)
+            size: size,
+            sourceEntityID: id)
     }
 
     func matchesSearch(_ query: String) -> Bool {
@@ -111,4 +112,6 @@ final class CombatEntity: Equatable {
     }
 }
 
-extension CombatEntity: CombatEntityStats {}
+extension CombatEntity: CombatEntityStats {
+    var sourceEntityID: UUID? { nil }
+}

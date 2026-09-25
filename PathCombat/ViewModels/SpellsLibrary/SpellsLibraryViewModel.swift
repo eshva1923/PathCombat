@@ -26,6 +26,13 @@ final class SpellsLibraryViewModel {
         return AppSection.spellsLibrary.rawValue
     }
 
+    func groupedByLevel(_ spells: [Spell]) -> [(level: Int, spells: [Spell])] {
+        let grouped = Dictionary(grouping: spells, by: { $0.level })
+        return grouped.keys.sorted().map { level in
+            (level: level, spells: grouped[level, default: []].sorted { $0.name < $1.name })
+        }
+    }
+
     func toggleTradition(_ tradition: SpellTradition, on spell: Spell) {
         if let index = spell.traditions.firstIndex(of: tradition) {
             spell.traditions.remove(at: index)

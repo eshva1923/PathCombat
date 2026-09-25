@@ -23,11 +23,15 @@ final class EncounterCombatEntity: Equatable {
     var spellcasting: Spellcasting?
     var speed: [Speed]
     var size: CreatureSize
+    /// The library `CombatEntity` this copy was created from, if any — lets "Sync to Encounters"
+    /// find every copy of a template so edits in the Entities Library can be pushed to them.
+    var sourceEntityID: UUID?
 
     init(id: UUID?, name: String, level: Int, iniMod: Int, currentIni: Int, hp: Int, wounds: Int,
          tags: [String], currentConditions: [String], affectingConditions: [AppliedCondition],
          ac: Int, fortST: Int, refST: Int, willST: Int, dc: Int, role: CombatRole, actions: [CombatAction],
-         spellcasting: Spellcasting? = nil, speed: [Speed] = Speed.defaultLandSpeed, size: CreatureSize = .medium) {
+         spellcasting: Spellcasting? = nil, speed: [Speed] = Speed.defaultLandSpeed, size: CreatureSize = .medium,
+         sourceEntityID: UUID? = nil) {
         self.id = id ?? UUID()
         self.name = name
         self.level = level
@@ -48,6 +52,7 @@ final class EncounterCombatEntity: Equatable {
         self.spellcasting = spellcasting
         self.speed = speed
         self.size = size
+        self.sourceEntityID = sourceEntityID
     }
 }
 

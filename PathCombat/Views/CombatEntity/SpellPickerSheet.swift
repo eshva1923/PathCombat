@@ -88,7 +88,10 @@ struct SpellPickerSheet: View {
                 ForEach(spell.traditions) { tradition in
                     LabelTag(text: tradition.rawValue, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
-                LabelTag(text: spell.level == 0 ? "Cantrip" : "Rank \(spell.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
+                Icons.spellRank(spell.level)
+                    .padding(3)
+                    .background(Color.brown)
+                    .cornerRadius(5)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 10)

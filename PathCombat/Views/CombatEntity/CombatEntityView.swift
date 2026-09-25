@@ -47,6 +47,13 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     .fontWeight(.bold)
                 levelTag
                 roleField
+                if isTemplate {
+                    Button {
+                        viewModel.syncToEncounters(using: modelContext)
+                    } label: {
+                        Label("Sync to Encounters", systemImage: "arrow.triangle.2.circlepath")
+                    }
+                }
                 if !combatEntity.affectingConditions.isEmpty {
                     Icons.affectedByConditions.foregroundStyle(.orange)
                 }
@@ -375,9 +382,9 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                             }
                         }
                     }
-                    spellRankRow(rank: 0, label: "Cantrips")
+                    spellRankRow(rank: 0)
                     ForEach(1...10, id: \.self) { rank in
-                        spellRankRow(rank: rank, label: "Rank \(rank)")
+                        spellRankRow(rank: rank)
                     }
                     focusSpellsRow
                 }
@@ -449,12 +456,12 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     }
 
     @ViewBuilder
-    private func spellRankRow(rank: Int, label: String) -> some View {
+    private func spellRankRow(rank: Int) -> some View {
         let spellsForRank = viewModel.knownSpells(rank: rank, allSpells: allSpells)
         if isTemplate {
             HStack(alignment: .top) {
-                Text(label)
-                    .frame(width: 90, alignment: .leading)
+                Icons.spellRank(rank)
+                    .frame(width: 30, alignment: .leading)
                 if rank > 0 {
                     Text("Slots")
                     SelectAllIntField(value: availableSlotsBinding(rank: rank), formatter: formatter)
@@ -464,8 +471,8 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             }
         } else if viewModel.availableSlots(rank: rank) > 0 || !spellsForRank.isEmpty {
             HStack(alignment: .top) {
-                Text(label)
-                    .frame(width: 90, alignment: .leading)
+                Icons.spellRank(rank)
+                    .frame(width: 30, alignment: .leading)
                 if rank > 0 {
                     pipsStepper(value: spentSlotsBinding(rank: rank), total: viewModel.availableSlots(rank: rank))
                 }

@@ -28,4 +28,8 @@ struct Icons {
     static let dc = Image(systemName: "hurricane")
     static let speed = Image(systemName: "hare.fill")
     static let size = Image(systemName: "ruler.fill")
+
+    static func spellRank(_ level: Int) -> Image {
+        Image(systemName: "\(level).circle.fill")
+    }
 }

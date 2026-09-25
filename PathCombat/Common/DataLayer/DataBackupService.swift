@@ -20,11 +20,11 @@ enum DataBackupService {
     private static let encountersMarker = "#Encounters"
 
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
-    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions"]
+    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
         "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
-        "speed", "size"
+        "speed", "size", "sourceEntityID"
     ]
     private static let encountersHeader = [
         "id", "name", "date", "completed", "currentInitiative", "elapsedCombatRounds",
@@ -195,7 +195,8 @@ enum DataBackupService {
             encodeActions(entity.actions),
             encodeSpellcasting(entity.spellcasting),
             encodeSpeed(entity.speed),
-            entity.size.rawValue
+            entity.size.rawValue,
+            entity.sourceEntityID?.uuidString ?? ""
         ]
     }
 
@@ -246,7 +247,8 @@ enum DataBackupService {
             actions: row.count >= 17 ? decodeActions(row[16]) : [],
             spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil,
             speed: row.count >= 19 ? decodeSpeed(row[18]) : Speed.defaultLandSpeed,
-            size: row.count >= 20 ? (CreatureSize(rawValue: row[19]) ?? .medium) : .medium)
+            size: row.count >= 20 ? (CreatureSize(rawValue: row[19]) ?? .medium) : .medium,
+            sourceEntityID: row.count >= 21 ? UUID(uuidString: row[20]) : nil)
     }
 
     private static func spellRow(for spell: Spell) -> [String] {
@@ -257,7 +259,10 @@ enum DataBackupService {
             spell.isFocusSpell ? "true" : "false",
             spell.details,
             spell.aonID.map(String.init) ?? "",
-            spell.traditions.map(\.rawValue).joined(separator: ";")
+            spell.traditions.map(\.rawValue).joined(separator: ";"),
+            String(spell.speed),
+            spell.range,
+            spell.area
         ]
     }
 
@@ -272,7 +277,10 @@ enum DataBackupService {
             isFocusSpell: row[3] == "true",
             details: row[4],
             aonID: aonID,
-            traditions: traditions)
+            traditions: traditions,
+            speed: row.count >= 8 ? Int(row[7]) : nil,
+            range: row.count >= 9 ? row[8] : nil,
+            area: row.count >= 10 ? row[9] : nil)
     }
 
     private static func splitList(_ value: String) -> [String] {
