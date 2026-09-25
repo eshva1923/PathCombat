@@ -14,6 +14,8 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     @Bindable var combatEntity: Entity
     @State private var viewModel: CombatEntityViewModel<Entity>
     @State private var tagsText: String
+    @State private var knownSpellsBuffers: [String]
+    @State private var focusSpellsBuffer: String
     @State private var isShowingConditionPicker = false
     let isTemplate: Bool
     let isCollapsed: Bool
@@ -30,14 +32,17 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         self.isCollapsed = isCollapsed
         self._viewModel = State(initialValue: CombatEntityViewModel(combatEntity: combatEntity))
         self._tagsText = State(initialValue: combatEntity.tags.joined(separator: ", "))
+        let knownSpells = combatEntity.spellcasting?.knownSpells ?? Array(repeating: [], count: 11)
+        self._knownSpellsBuffers = State(initialValue: knownSpells.map { $0.joined(separator: ", ") })
+        self._focusSpellsBuffer = State(initialValue: (combatEntity.spellcasting?.focusSpells ?? []).joined(separator: ", "))
     }
     
     var body: some View {
         Group {
             HStack{
-                TextField(text: $combatEntity.name) {
-                    Icons.character
-                }.font(.title)
+                Icons.character
+                SelectAllTextField(text: $combatEntity.name)
+                    .font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
                 levelTag
@@ -50,7 +55,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }
             }
             .padding(.vertical)
-
             if !isCollapsed {
                 if isTemplate {
                     tagsField
@@ -73,6 +77,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     conditionsSection
                 }
                 actionsSection
+                spellsSection
             }
         }
         .padding(.horizontal)
@@ -81,10 +86,8 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     var levelTag: some View {
         HStack(spacing: 4) {
             Text("Level")
-            TextField(value: $combatEntity.level, formatter: formatter) {
-                EmptyView()
-            }
-            .frame(width: 30)
+            SelectAllIntField(value: $combatEntity.level, formatter: formatter)
+                .frame(width: 30)
         }
         .padding(3)
         .background(Color.brown)
@@ -122,10 +125,8 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             Icons.initiative
             Text("Initiative")
                 .fontWeight(.bold)
-            TextField(value: $combatEntity.currentIni,
-                      formatter: formatter) {
-                Icons.initiative
-            }.fontWeight(.bold)
+            SelectAllIntField(value: $combatEntity.currentIni, formatter: formatter)
+                .fontWeight(.bold)
             Button {
                 viewModel.rollInitiative()
             } label: {
@@ -142,19 +143,15 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 Icons.hp
                 Text("HP")
                     .fontWeight(.bold)
-                TextField(value: $combatEntity.hp,
-                          formatter: formatter) {
-                    Icons.hp
-                }.fontWeight(.bold)
+                SelectAllIntField(value: $combatEntity.hp, formatter: formatter)
+                    .fontWeight(.bold)
                 if !isTemplate {
                     Spacer()
                     Icons.wounds
                     Text("Wounds")
                         .fontWeight(.medium)
-                    TextField(value: $combatEntity.wounds,
-                              formatter: formatter) {
-                        Icons.wounds
-                    }.fontWeight(.medium)
+                    SelectAllIntField(value: $combatEntity.wounds, formatter: formatter)
+                        .fontWeight(.medium)
                 }
             }
 
@@ -240,7 +237,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         return VStack(alignment: .leading, spacing: 4) {
             HStack {
                 if isTemplate {
-                    TextField("Name", text: binding.name)
+                    SelectAllTextField("Name", text: binding.name)
                         .fontWeight(.bold)
                 } else {
                     Text(action.name)
@@ -275,11 +272,9 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     }
                     .labelsHidden()
                     Text("To Hit")
-                    TextField(value: binding.toHit, formatter: formatter) {
-                        EmptyView()
-                    }
-                    .frame(width: 40)
-                    TextField("Damage (e.g. 2d6+4)", text: binding.damage)
+                    SelectAllIntField(value: binding.toHit, formatter: formatter)
+                        .frame(width: 40)
+                    SelectAllTextField("Damage (e.g. 2d6+4)", text: binding.damage)
                 } else {
                     Text("+\(action.toHit) vs \(action.target.displayName)")
                         .foregroundStyle(.secondary)
@@ -288,7 +283,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 }
             }
             if isTemplate {
-                TextField("Description", text: binding.desc)
+                SelectAllTextField("Description", text: binding.desc)
                     .font(.caption)
             } else if !action.desc.isEmpty {
                 Text(action.desc)
@@ -305,6 +300,150 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         Binding(
             get: { viewModel.action(withID: action.id) ?? action },
             set: { newValue in viewModel.updateAction(newValue) }
+        )
+    }
+
+    var spellsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Spells")
+                    .fontWeight(.bold)
+                Spacer()
+                if isTemplate {
+                    Button {
+                        if combatEntity.spellcasting == nil {
+                            viewModel.enableSpellcasting()
+                        } else {
+                            viewModel.disableSpellcasting()
+                        }
+                    } label: {
+                        Text(combatEntity.spellcasting == nil ? "Enable Spellcasting" : "Disable Spellcasting")
+                    }
+                }
+            }
+            if combatEntity.spellcasting == nil {
+                Text("Not a spellcaster")
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    focusPointsRow
+                    spellRankRow(rank: 0, label: "Cantrips")
+                    ForEach(1...10, id: \.self) { rank in
+                        spellRankRow(rank: rank, label: "Rank \(rank)")
+                    }
+                    focusSpellsRow
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.elementBackground.opacity(0.25))
+        .cornerRadius(8)
+        .padding(.horizontal, 10)
+    }
+
+    private var focusPointsRow: some View {
+        HStack {
+            Text("Focus Points")
+                .fontWeight(.semibold)
+                .frame(width: 90, alignment: .leading)
+            if isTemplate {
+                Picker("Total", selection: focusPointsTotalBinding) {
+                    ForEach([0, 1, 2, 3], id: \.self) { value in
+                        Text("\(value)").tag(value)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 70)
+            } else {
+                Stepper(value: focusPointsSpentBinding, in: 0...viewModel.focusPointsTotal()) {
+                    pips(spent: viewModel.focusPointsSpent(), total: viewModel.focusPointsTotal())
+                }
+            }
+        }
+    }
+
+    private func pips(spent: Int, total: Int) -> some View {
+        HStack(spacing: 2) {
+            ForEach(0..<total, id: \.self) { index in
+                Image(systemName: index < spent ? "circle.fill" : "circle")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func spellRankRow(rank: Int, label: String) -> some View {
+        if isTemplate {
+            HStack {
+                Text(label)
+                    .frame(width: 90, alignment: .leading)
+                if rank > 0 {
+                    Text("Slots")
+                    SelectAllIntField(value: availableSlotsBinding(rank: rank), formatter: formatter)
+                        .frame(width: 30)
+                }
+                TextField("Known spells (comma separated)", text: $knownSpellsBuffers[rank])
+                    .onChange(of: knownSpellsBuffers[rank]) { _, newValue in
+                        viewModel.setKnownSpells(rank: rank, from: newValue)
+                    }
+            }
+        } else if viewModel.availableSlots(rank: rank) > 0 || !viewModel.knownSpellsText(rank: rank).isEmpty {
+            HStack {
+                Text(label)
+                    .frame(width: 90, alignment: .leading)
+                if rank > 0 {
+                    Stepper(value: spentSlotsBinding(rank: rank), in: 0...viewModel.availableSlots(rank: rank)) {
+                        pips(spent: viewModel.spentSlots(rank: rank), total: viewModel.availableSlots(rank: rank))
+                    }
+                }
+                Text(viewModel.knownSpellsText(rank: rank))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private var focusSpellsRow: some View {
+        HStack {
+            Text("Focus Spells")
+                .fontWeight(.semibold)
+                .frame(width: 90, alignment: .leading)
+            if isTemplate {
+                TextField("Comma separated", text: $focusSpellsBuffer)
+                    .onChange(of: focusSpellsBuffer) { _, newValue in
+                        viewModel.setFocusSpells(from: newValue)
+                    }
+            } else {
+                Text(viewModel.focusSpellsText())
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var focusPointsTotalBinding: Binding<Int> {
+        Binding(
+            get: { viewModel.focusPointsTotal() },
+            set: { newValue in viewModel.setFocusPointsTotal(newValue) }
+        )
+    }
+
+    private var focusPointsSpentBinding: Binding<Int> {
+        Binding(
+            get: { viewModel.focusPointsSpent() },
+            set: { newValue in viewModel.setFocusPointsSpent(newValue) }
+        )
+    }
+
+    private func availableSlotsBinding(rank: Int) -> Binding<Int> {
+        Binding(
+            get: { viewModel.availableSlots(rank: rank) },
+            set: { newValue in viewModel.setAvailableSlots(rank: rank, to: newValue) }
+        )
+    }
+
+    private func spentSlotsBinding(rank: Int) -> Binding<Int> {
+        Binding(
+            get: { viewModel.spentSlots(rank: rank) },
+            set: { newValue in viewModel.setSpentSlots(rank: rank, to: newValue) }
         )
     }
 

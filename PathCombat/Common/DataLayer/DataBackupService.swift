@@ -21,7 +21,7 @@ enum DataBackupService {
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
-        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions"
+        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting"
     ]
     private static let encountersHeader = [
         "id", "name", "date", "completed", "currentInitiative", "elapsedCombatRounds",
@@ -169,7 +169,8 @@ enum DataBackupService {
             String(entity.willST),
             String(entity.dc),
             entity.role.rawValue,
-            encodeActions(entity.actions)
+            encodeActions(entity.actions),
+            encodeSpellcasting(entity.spellcasting)
         ]
     }
 
@@ -192,7 +193,8 @@ enum DataBackupService {
             dc: Int(row[14]),
             affectingConditions: decodeAppliedConditions(row[9]),
             role: row.count >= 16 ? CombatRole(rawValue: row[15]) : nil,
-            actions: row.count >= 17 ? decodeActions(row[16]) : nil)
+            actions: row.count >= 17 ? decodeActions(row[16]) : nil,
+            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil)
     }
 
     private static func parseEncounterCombatEntity(from row: [String]) -> EncounterCombatEntity? {
@@ -214,7 +216,8 @@ enum DataBackupService {
             willST: Int(row[13]) ?? 0,
             dc: Int(row[14]) ?? 10,
             role: row.count >= 16 ? (CombatRole(rawValue: row[15]) ?? .attacker) : .attacker,
-            actions: row.count >= 17 ? decodeActions(row[16]) : [])
+            actions: row.count >= 17 ? decodeActions(row[16]) : [],
+            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil)
     }
 
     private static func splitList(_ value: String) -> [String] {
@@ -234,6 +237,16 @@ enum DataBackupService {
     private static func decodeActions(_ value: String) -> [CombatAction] {
         guard !value.isEmpty, let data = value.data(using: .utf8) else { return [] }
         return (try? JSONDecoder().decode([CombatAction].self, from: data)) ?? []
+    }
+
+    private static func encodeSpellcasting(_ spellcasting: Spellcasting?) -> String {
+        guard let spellcasting, let data = try? JSONEncoder().encode(spellcasting) else { return "" }
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    private static func decodeSpellcasting(_ value: String) -> Spellcasting? {
+        guard !value.isEmpty, let data = value.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(Spellcasting.self, from: data)
     }
 
     private static func decodeAppliedConditions(_ value: String) -> [AppliedCondition] {

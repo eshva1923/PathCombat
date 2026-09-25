@@ -98,7 +98,7 @@ struct ConditionTag: View {
                         HStack {
                             Text("Value")
                                 .fontWeight(.semibold)
-                            TextField("-", text: value)
+                            SelectAllTextField("-", text: value)
                                 .frame(width: 60)
                         }
                     }
@@ -106,7 +106,7 @@ struct ConditionTag: View {
                         HStack {
                             Text("Damage")
                                 .fontWeight(.semibold)
-                            TextField("e.g. 1d6 Acid", text: damage)
+                            SelectAllTextField("e.g. 1d6 Acid", text: damage)
                         }
                     }
                     Divider()
@@ -159,12 +159,10 @@ struct LabelStat: View {
         Label {
             HStack {
                 if isEditable {
-                    TextField(value: $value, formatter: Self.formatter) {
-                        EmptyView()
-                    }
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .frame(width: 40)
+                    SelectAllIntField(value: $value, formatter: Self.formatter)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .frame(width: 40)
                 } else {
                     Text("\(value)")
                         .font(.title3)

@@ -76,7 +76,7 @@ extension ConditionsLibraryView {
     private var searchField: some View {
         HStack {
             Icons.search.foregroundStyle(.secondary)
-            TextField("", text: $searchText)
+            SelectAllTextField(text: $searchText)
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
@@ -166,7 +166,7 @@ extension ConditionsLibraryView {
         @Bindable var condition = condition
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TextField("Condition name", text: $condition.name)
+                SelectAllTextField("Condition name", text: $condition.name)
                     .font(.title)
                     .fontDesign(.serif)
                     .fontWeight(.bold)
@@ -180,7 +180,7 @@ extension ConditionsLibraryView {
                 Toggle("Persistent Damage", isOn: $condition.isPersistent)
                     .font(.headline)
                 if condition.isPersistent {
-                    TextField("Default damage, e.g. 1d6 Acid (optional — can be set per application instead)", text: damageBinding(for: condition))
+                    SelectAllTextField("Default damage, e.g. 1d6 Acid (optional — can be set per application instead)", text: damageBinding(for: condition))
                 }
             }
             .padding()

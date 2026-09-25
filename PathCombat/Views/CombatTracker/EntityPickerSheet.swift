@@ -38,7 +38,7 @@ struct EntityPickerSheet: View {
                 .padding()
             HStack {
                 Icons.search.foregroundStyle(.secondary)
-                TextField("", text: $searchText)
+                SelectAllTextField(text: $searchText)
                 if !searchText.isEmpty {
                     Button {
                         searchText = ""

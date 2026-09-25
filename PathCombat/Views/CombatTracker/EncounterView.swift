@@ -55,7 +55,7 @@ struct EncounterView: View {
                                     }
                                 }
                                 .padding(4)
-                                .background(entity.isDead ? Color.black.opacity(0.3) : Color.clear)
+                                .background(entity.isDead ? Color.black.opacity(0.3) : Color.clear).cornerRadius(10)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.secondary, lineWidth: entity.id == encounter.actingEntity ? 2 : 0)
@@ -248,12 +248,10 @@ extension EncounterView {
     
     var topRow: some View {
         HStack {
-            TextField("Encounter name", text: $encounter.name)
+            SelectAllTextField("Encounter name", text: $encounter.name)
             Text("Session")
-            TextField(value: $encounter.session, formatter: formatter) {
-                EmptyView()
-            }
-            .frame(width: 40)
+            SelectAllIntField(value: $encounter.session, formatter: formatter)
+                .frame(width: 40)
             Image(systemName: "tag")
             TextField("Tags (comma separated)", text: $tagsText)
                 .onChange(of: tagsText) { _, newValue in
@@ -278,7 +276,7 @@ extension EncounterView {
                      level: 8,
                      iniMod: 15,
                      currentIni: nil,
-                     hp: 200,
+                     hp: 0,
                      wounds: nil,
                      currentConditions: nil,
                      ac: 25,

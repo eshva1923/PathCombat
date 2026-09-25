@@ -56,13 +56,13 @@ struct ConditionPickerSheet: View {
             if selectedCondition?.isPersistent == true {
                 HStack {
                     Text("Damage")
-                    TextField("e.g. 1d6 Acid", text: $damageText)
+                    SelectAllTextField("e.g. 1d6 Acid", text: $damageText)
                 }
                 .padding()
             } else {
                 HStack {
                     Text("Value (optional)")
-                    TextField("e.g. 2", text: $valueText)
+                    SelectAllTextField("e.g. 2", text: $valueText)
                         .frame(width: 60)
                 }
                 .padding()

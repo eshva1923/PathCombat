@@ -79,7 +79,7 @@ extension EntitiesLibraryView {
     private var searchField: some View {
         HStack {
             Icons.search.foregroundStyle(.secondary)
-            TextField("", text: $searchText)
+            SelectAllTextField(text: $searchText)
             if !searchText.isEmpty {
                 Button {
                     searchText = ""

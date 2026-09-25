@@ -19,6 +19,7 @@ protocol CombatEntityStats: AnyObject, Observable {
     var dc: Int { get set }
     var role: CombatRole { get set }
     var actions: [CombatAction] { get set }
+    var spellcasting: Spellcasting? { get set }
 }
 
 extension CombatEntityStats {

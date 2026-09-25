@@ -27,11 +27,13 @@ final class CombatEntity: Equatable {
     var dc: Int
     var role: CombatRole
     var actions: [CombatAction]
+    var spellcasting: Spellcasting?
 
 
     init(name: String?, id: UUID?, tags: [String]?, level: Int?, iniMod: Int?, currentIni: Int?, hp: Int?, wounds: Int?,
          currentConditions: [String]?, ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?,
-         affectingConditions: [AppliedCondition]? = nil, role: CombatRole? = nil, actions: [CombatAction]? = nil) {
+         affectingConditions: [AppliedCondition]? = nil, role: CombatRole? = nil, actions: [CombatAction]? = nil,
+         spellcasting: Spellcasting? = nil) {
         self.name = name ?? "Unnamed combatent"
         self.id = id ?? UUID()
         self.tags = tags ?? []
@@ -49,6 +51,7 @@ final class CombatEntity: Equatable {
         self.dc = dc ?? 10
         self.role = role ?? .attacker
         self.actions = actions ?? [CombatAction.defaultMelee()]
+        self.spellcasting = spellcasting
     }
 
     func copyForEncounter(name: String? = nil) -> EncounterCombatEntity {
@@ -69,7 +72,8 @@ final class CombatEntity: Equatable {
             willST: willST,
             dc: dc,
             role: role,
-            actions: actions)
+            actions: actions,
+            spellcasting: spellcasting?.resetForEncounter())
     }
 
     func matchesSearch(_ query: String) -> Bool {

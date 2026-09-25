@@ -121,4 +121,67 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
             return (condition?.isPersistent ?? false) ? nil : applied.conditionID
         })
     }
+
+    func enableSpellcasting() {
+        if combatEntity.spellcasting == nil {
+            combatEntity.spellcasting = Spellcasting()
+        }
+    }
+
+    func disableSpellcasting() {
+        combatEntity.spellcasting = nil
+    }
+
+    func focusPointsTotal() -> Int {
+        combatEntity.spellcasting?.focusPointsTotal ?? 0
+    }
+
+    func setFocusPointsTotal(_ value: Int) {
+        combatEntity.spellcasting?.focusPointsTotal = value
+    }
+
+    func focusPointsSpent() -> Int {
+        combatEntity.spellcasting?.focusPointsSpent ?? 0
+    }
+
+    func setFocusPointsSpent(_ value: Int) {
+        guard let total = combatEntity.spellcasting?.focusPointsTotal else { return }
+        combatEntity.spellcasting?.focusPointsSpent = min(max(0, value), total)
+    }
+
+    func availableSlots(rank: Int) -> Int {
+        combatEntity.spellcasting?.availableSlots(rank: rank) ?? 0
+    }
+
+    func setAvailableSlots(rank: Int, to value: Int) {
+        combatEntity.spellcasting?.setAvailableSlots(rank: rank, to: value)
+    }
+
+    func spentSlots(rank: Int) -> Int {
+        combatEntity.spellcasting?.spentSlots(rank: rank) ?? 0
+    }
+
+    func setSpentSlots(rank: Int, to value: Int) {
+        combatEntity.spellcasting?.setSpentSlots(rank: rank, to: value)
+    }
+
+    func knownSpellsText(rank: Int) -> String {
+        (combatEntity.spellcasting?.spells(rank: rank) ?? []).joined(separator: ", ")
+    }
+
+    func setKnownSpells(rank: Int, from text: String) {
+        combatEntity.spellcasting?.setSpells(rank: rank, to: Self.parseList(text))
+    }
+
+    func focusSpellsText() -> String {
+        (combatEntity.spellcasting?.focusSpells ?? []).joined(separator: ", ")
+    }
+
+    func setFocusSpells(from text: String) {
+        combatEntity.spellcasting?.focusSpells = Self.parseList(text)
+    }
+
+    private static func parseList(_ text: String) -> [String] {
+        text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    }
 }
