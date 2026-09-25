@@ -203,19 +203,10 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         .cornerRadius(8)
         .padding(.horizontal, 10)
         .sheet(isPresented: $isShowingConditionPicker) {
-            ConditionPickerSheet(excludedConditionIDs: nonStackableAppliedConditionIDs) { condition, value, damage in
+            ConditionPickerSheet(excludedConditionIDs: viewModel.nonStackableConditionIDs(allConditions: allConditions)) { condition, value, damage in
                 viewModel.addCondition(condition, value: value, damage: damage)
             }
         }
-    }
-
-    /// Conditions already applied are excluded from the picker so they can't be duplicated —
-    /// except persistent-damage conditions, which can stack (each with its own damage text).
-    private var nonStackableAppliedConditionIDs: Set<UUID> {
-        Set(combatEntity.affectingConditions.compactMap { applied -> UUID? in
-            let condition = allConditions.first(where: { $0.id == applied.conditionID })
-            return (condition?.isPersistent ?? false) ? nil : applied.conditionID
-        })
     }
 
     var actionsSection: some View {
@@ -312,11 +303,8 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
 
     private func actionBinding(for action: CombatAction) -> Binding<CombatAction> {
         Binding(
-            get: { combatEntity.actions.first(where: { $0.id == action.id }) ?? action },
-            set: { newValue in
-                guard let index = combatEntity.actions.firstIndex(where: { $0.id == action.id }) else { return }
-                combatEntity.actions[index] = newValue
-            }
+            get: { viewModel.action(withID: action.id) ?? action },
+            set: { newValue in viewModel.updateAction(newValue) }
         )
     }
 

@@ -76,8 +76,7 @@ extension ConditionsLibraryView {
     private var searchField: some View {
         HStack {
             Icons.search.foregroundStyle(.secondary)
-            TextField("Search by name or damage", text: $searchText)
-                .textFieldStyle(.plain)
+            TextField("", text: $searchText)
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
@@ -158,10 +157,8 @@ extension ConditionsLibraryView {
 
     private func damageBinding(for condition: Condition) -> Binding<String> {
         Binding(
-            get: { condition.damage ?? "" },
-            set: { newValue in
-                condition.damage = newValue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : newValue
-            }
+            get: { viewModel.damageText(for: condition) },
+            set: { newValue in viewModel.setDamage(condition, to: newValue) }
         )
     }
 

@@ -79,8 +79,7 @@ extension EntitiesLibraryView {
     private var searchField: some View {
         HStack {
             Icons.search.foregroundStyle(.secondary)
-            TextField("Search by name, level, tag, or role", text: $searchText)
-                .textFieldStyle(.plain)
+            TextField("", text: $searchText)
             if !searchText.isEmpty {
                 Button {
                     searchText = ""

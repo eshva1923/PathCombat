@@ -235,14 +235,14 @@ extension EncounterView {
         } label: {
             VStack(spacing: 4) {
                 Icons.addApp
-                Text("Load entity")
-                    .font(.caption)
+                    .font(.title)
+                Text("Add to encounter")
+                    .font(.headline)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
     
     

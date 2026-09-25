@@ -25,6 +25,14 @@ final class ConditionsLibraryViewModel {
         }
     }
 
+    func damageText(for condition: Condition) -> String {
+        condition.damage ?? ""
+    }
+
+    func setDamage(_ condition: Condition, to newValue: String) {
+        condition.damage = newValue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : newValue
+    }
+
     func navigationTitle(selectedID: UUID?, in conditions: [Condition]) -> String {
         if let selectedID,
            let condition = conditions.first(where: { $0.id == selectedID }) {

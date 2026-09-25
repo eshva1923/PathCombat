@@ -51,8 +51,6 @@ final class CombatEntity: Equatable {
         self.actions = actions ?? [CombatAction.defaultMelee()]
     }
 
-    /// Creates an independent per-encounter copy (a fresh identity and reset combat state)
-    /// so the same library template can be added to an encounter multiple times.
     func copyForEncounter(name: String? = nil) -> EncounterCombatEntity {
         EncounterCombatEntity(
             id: nil,

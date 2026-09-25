@@ -157,7 +157,6 @@ final class EncounterViewModel {
         isPersistentDamage(applied, allConditions: allConditions) ? .darkRed : .orange
     }
 
-    /// Persistent-damage conditions always sort last, so they stand out at the end of the list.
     func sortedConditions(_ conditions: [AppliedCondition], allConditions: [Condition]) -> [AppliedCondition] {
         conditions.sorted { lhs, rhs in
             let lhsPersistent = isPersistentDamage(lhs, allConditions: allConditions)

@@ -38,7 +38,7 @@ struct CombatTrackerView: View {
                             encounterRow(encounter)
                             Divider()
                         }
-                        addEncounterRow
+                        addEncounterRow.padding(4)
                     }
                 }
             }
@@ -53,7 +53,7 @@ struct CombatTrackerView: View {
                let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
                 EncounterView(encounter: encounter)
             } else {
-                createEncounterButton
+                createEncounterButton.padding()
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
@@ -75,8 +75,7 @@ extension CombatTrackerView {
     private var searchField: some View {
         HStack {
             Icons.search.foregroundStyle(.secondary)
-            TextField("Search by name, tag, or session", text: $searchText)
-                .textFieldStyle(.plain)
+            TextField("", text: $searchText)
             if !searchText.isEmpty {
                 Button {
                     searchText = ""
@@ -96,10 +95,14 @@ extension CombatTrackerView {
             Button {
                 selectedEncounterID = encounter.id
             } label: {
-                Text(encounter.name)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                HStack {
+                    Text(encounter.name)
+                        .lineLimit(1)
+                    Spacer()
+                    Text("\(encounter.session)")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             Button {
@@ -113,8 +116,7 @@ extension CombatTrackerView {
             .buttonStyle(.plain)
             .opacity(hoveredEncounterID == encounter.id ? 1 : 0)
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(6)
         .background(
             selectedEncounterID == encounter.id
                 ? Color.accentColor.opacity(0.25)
@@ -138,7 +140,6 @@ extension CombatTrackerView {
             .padding(.vertical, 8)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     var createEncounterButton: some View {
@@ -152,7 +153,6 @@ extension CombatTrackerView {
                 Text("Create a new encounter")
             }
         }
-        .buttonStyle(.plain)
     }
 }
 

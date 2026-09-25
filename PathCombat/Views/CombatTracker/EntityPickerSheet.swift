@@ -38,8 +38,7 @@ struct EntityPickerSheet: View {
                 .padding()
             HStack {
                 Icons.search.foregroundStyle(.secondary)
-                TextField("Search by name, level, tag, or role", text: $searchText)
-                    .textFieldStyle(.plain)
+                TextField("", text: $searchText)
                 if !searchText.isEmpty {
                     Button {
                         searchText = ""
@@ -100,7 +99,7 @@ struct EntityPickerSheet: View {
                 Text(entity.name)
                     .fontWeight(.semibold)
                 if entity.role != .pc && entity.role != .boss {
-                    LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary, imageName: nil, hoverEffect: false, hoverColor: nil)
+                    LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary.opacity(0.25), imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
                 Spacer()
                 HStack {

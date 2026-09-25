@@ -76,8 +76,7 @@ struct ConditionPickerSheet: View {
                 Button("Add") {
                     if let selectedConditionID,
                        let condition = availableConditions.first(where: { $0.id == selectedConditionID }) {
-                        let damage = condition.isPersistent ? (damageText.isEmpty ? condition.damage : damageText) : nil
-                        onAdd(condition, Int(valueText), damage)
+                        onAdd(condition, Int(valueText), condition.resolvedDamage(from: damageText))
                     }
                     dismiss()
                 }

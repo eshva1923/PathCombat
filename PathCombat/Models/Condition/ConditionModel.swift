@@ -28,6 +28,11 @@ final class Condition {
         Condition(name: nil, id: nil, description: nil)
     }
 
+    func resolvedDamage(from enteredText: String) -> String? {
+        guard isPersistent else { return nil }
+        return enteredText.isEmpty ? damage : enteredText
+    }
+
     func matchesSearch(_ query: String) -> Bool {
         guard !query.isEmpty else { return true }
         let lowered = query.lowercased()

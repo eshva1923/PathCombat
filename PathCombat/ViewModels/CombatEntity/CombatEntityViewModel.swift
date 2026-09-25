@@ -103,4 +103,22 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
     func removeAction(_ action: CombatAction) {
         combatEntity.actions.removeAll(where: { $0.id == action.id })
     }
+
+    func action(withID id: UUID) -> CombatAction? {
+        combatEntity.actions.first(where: { $0.id == id })
+    }
+
+    func updateAction(_ action: CombatAction) {
+        guard let index = combatEntity.actions.firstIndex(where: { $0.id == action.id }) else {
+            return
+        }
+        combatEntity.actions[index] = action
+    }
+
+    func nonStackableConditionIDs(allConditions: [Condition]) -> Set<UUID> {
+        Set(combatEntity.affectingConditions.compactMap { applied -> UUID? in
+            let condition = allConditions.first(where: { $0.id == applied.conditionID })
+            return (condition?.isPersistent ?? false) ? nil : applied.conditionID
+        })
+    }
 }
