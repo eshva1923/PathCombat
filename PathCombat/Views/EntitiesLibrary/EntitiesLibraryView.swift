@@ -16,6 +16,7 @@ struct EntitiesLibraryView: View {
     @State private var hoveredEntityID: UUID?
     @State private var selectedEntityID: UUID?
     @State private var searchText = ""
+    @State private var expandedRole: CombatRole?
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -27,18 +28,29 @@ struct EntitiesLibraryView: View {
         entities.filter { $0.matchesSearch(searchText) }
     }
 
+    private var groupedEntities: [(role: CombatRole, entities: [CombatEntity])] {
+        viewModel.groupedEntities(filteredEntities)
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             VStack(spacing: 0) {
                 searchField
                 Divider()
                 ScrollView(.vertical) {
-                    VStack(spacing: 0) {
-                        ForEach(filteredEntities) { entity in
-                            entityRow(entity)
-                            Divider()
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        ForEach(groupedEntities, id: \.role) { group in
+                            Section {
+                                if !searchText.isEmpty || expandedRole == group.role {
+                                    ForEach(group.entities) { entity in
+                                        entityRow(entity)
+                                        Divider()
+                                    }
+                                }
+                            } header: {
+                                roleHeader(group.role)
+                            }
                         }
-                        addEntityRow
                     }
                 }
             }
@@ -62,6 +74,17 @@ struct EntitiesLibraryView: View {
         }
         .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedEntityID, in: entities))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    let newEntity = viewModel.addEntity(using: modelContext)
+                    selectedEntityID = newEntity.id
+                    expandedRole = newEntity.role
+                } label: {
+                    Icons.add
+                }
+            }
+        }
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all
@@ -69,7 +92,11 @@ struct EntitiesLibraryView: View {
         }
         .onAppear {
             if selectedEntityID == nil {
-                selectedEntityID = entities.first?.id
+                selectedEntityID = groupedEntities.first?.entities.first?.id
+            }
+            if expandedRole == nil {
+                let selected = entities.first(where: { $0.id == selectedEntityID })
+                expandedRole = selected?.role ?? groupedEntities.first?.role
             }
         }
     }
@@ -94,15 +121,35 @@ extension EntitiesLibraryView {
         .padding(.vertical, 8)
     }
 
+    private func roleHeader(_ role: CombatRole) -> some View {
+        Button {
+            expandedRole = expandedRole == role ? nil : role
+        } label: {
+            HStack {
+                if let icon = role.icon {
+                    Image(systemName: icon)
+                        .foregroundStyle(.secondary)
+                }
+                Text(role.displayName)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .rotationEffect(.degrees(expandedRole == role ? 90 : 0))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .background(Color.secondary.opacity(0.25))
+        }
+        .buttonStyle(.plain)
+    }
+
     private func entityRow(_ entity: CombatEntity) -> some View {
         HStack {
             Button {
                 selectedEntityID = entity.id
             } label: {
                 HStack {
-                    if let roleIcon = entity.role.icon {
-                        Image(systemName: roleIcon)
-                    }
                     Text(entity.name)
                         .lineLimit(1)
                     Spacer()
@@ -135,22 +182,6 @@ extension EntitiesLibraryView {
         .onHover { hovering in
             hoveredEntityID = hovering ? entity.id : nil
         }
-    }
-
-    var addEntityRow: some View {
-        Button {
-            let newEntity = viewModel.addEntity(using: modelContext)
-            selectedEntityID = newEntity.id
-        } label: {
-            HStack {
-                Spacer()
-                Icons.add
-                Spacer()
-            }
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     var createEntityButton: some View {

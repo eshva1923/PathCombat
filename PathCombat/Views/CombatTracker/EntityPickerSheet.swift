@@ -92,21 +92,23 @@ struct EntityPickerSheet: View {
         return Button {
             selectedEntityID = entity.id
         } label: {
-            HStack {
-                if let roleIcon = entity.role.icon {
-                    Image(systemName: roleIcon)
+            VStack(alignment: .leading) {
+                HStack {
+                    if let roleIcon = entity.role.icon {
+                        Image(systemName: roleIcon)
+                    }
+                    Text(entity.name)
+                        .fontWeight(.semibold)
+                    if entity.role != .pc && entity.role != .boss {
+                        LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary.opacity(0.25), imageName: nil, hoverEffect: false, hoverColor: nil)
+                    }
+                    Spacer()
+                    LabelTag(text: "Level \(entity.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
-                Text(entity.name)
-                    .fontWeight(.semibold)
-                if entity.role != .pc && entity.role != .boss {
-                    LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary.opacity(0.25), imageName: nil, hoverEffect: false, hoverColor: nil)
-                }
-                Spacer()
                 HStack {
                     ForEach(entity.tags, id: \.self) { tag in
                         LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
                     }
-                    LabelTag(text: "Level \(entity.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
                 }
             }
             .padding(.vertical, 6)

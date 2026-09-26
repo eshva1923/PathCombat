@@ -77,13 +77,16 @@ final class EncounterViewModel {
     }
 
     var isAdvanceButtonDisabled: Bool {
+        if encounter.completed { return true }
         if encounter.combatEntities.isEmpty { return true }
         if needsNPCInitiativeRoll { return false }
         return !canStartCombat
     }
 
     var advanceButtonColor: Color {
-        if needsNPCInitiativeRoll {
+        if encounter.completed {
+            return .secondary
+        } else if needsNPCInitiativeRoll {
             return .orange
         } else if !canStartCombat {
             return .red
@@ -95,7 +98,9 @@ final class EncounterViewModel {
     }
 
     var advanceInitiativeButtonText: String {
-        if needsNPCInitiativeRoll {
+        if encounter.completed {
+            return "Encounter completed"
+        } else if needsNPCInitiativeRoll {
             return "Roll Initiative for NPCs"
         } else if hasStartedCombat {
             return "Turn \(encounter.elapsedCombatRounds)"
@@ -215,6 +220,11 @@ final class EncounterViewModel {
     }
 
     func resetEncounter() {
+        for entity in encounter.combatEntities {
+            entity.currentIni = 0
+            entity.wounds = 0
+            entity.affectingConditions.removeAll()
+        }
         encounter.elapsedCombatRounds = 0
         encounter.currentInitiative = 0
         encounter.actingEntity = nil

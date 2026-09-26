@@ -119,6 +119,8 @@ extension CombatTrackerView {
                     Spacer()
                     Text("\(encounter.session)")
                 }
+                .strikethrough(encounter.completed)
+                .foregroundStyle(encounter.completed ? .secondary : .primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
@@ -178,7 +180,7 @@ extension CombatTrackerView {
     let container = try! ModelContainer(
         for: Encounter.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-    container.mainContext.insert(Encounter(name: "Goblin Ambush", id: nil, date: nil, completed: nil, combatEntities: nil))
+    container.mainContext.insert(Encounter(name: "Goblin Ambush", id: nil, date: nil, completed: true, combatEntities: nil))
     container.mainContext.insert(Encounter(name: "Dragon's Lair", id: nil, date: nil, completed: nil, combatEntities: nil))
     container.mainContext.insert(Encounter(name: "Bandit Camp", id: nil, date: nil, completed: nil, combatEntities: nil))
     return CombatTrackerView()

@@ -145,7 +145,7 @@ extension SpellsLibraryView {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
-            .background(Color.elementBackground)
+            .background(Color.secondary.opacity(0.25))
         }
         .buttonStyle(.plain)
     }
