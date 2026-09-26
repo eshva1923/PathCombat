@@ -13,7 +13,6 @@ struct EntitiesLibraryView: View {
     @Query private var entities: [CombatEntity]
     @State private var viewModel = EntitiesLibraryViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @State private var hoveredEntityID: UUID?
     @State private var selectedEntityID: UUID?
     @State private var searchText = ""
     @State private var expandedRole: CombatRole?
@@ -69,7 +68,10 @@ struct EntitiesLibraryView: View {
                         .id(entity.id)
                 }
             } else {
-                createEntityButton
+                CreateNewItemButton(title: "Create a new entity") {
+                    let newEntity = viewModel.addEntity(using: modelContext)
+                    selectedEntityID = newEntity.id
+                }
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
@@ -104,98 +106,45 @@ struct EntitiesLibraryView: View {
 
 extension EntitiesLibraryView {
     private var searchField: some View {
-        HStack {
-            Icons.search.foregroundStyle(.secondary)
-            SelectAllTextField(text: $searchText)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        SearchField(text: $searchText)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
     }
 
     private func roleHeader(_ role: CombatRole) -> some View {
-        Button {
-            expandedRole = expandedRole == role ? nil : role
-        } label: {
-            HStack {
-                if let icon = role.icon {
-                    Image(systemName: icon)
-                        .foregroundStyle(.secondary)
-                }
-                Text(role.displayName)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .rotationEffect(.degrees(expandedRole == role ? 90 : 0))
+        CollapsibleSectionHeader(
+            isExpanded: expandedRole == role,
+            onToggle: { expandedRole = expandedRole == role ? nil : role }
+        ) {
+            if let icon = role.icon {
+                Image(systemName: icon)
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-            .background(Color.secondary.opacity(0.25))
+            Text(role.displayName)
+            Spacer()
         }
-        .buttonStyle(.plain)
     }
 
     private func entityRow(_ entity: CombatEntity) -> some View {
-        HStack {
-            Button {
-                selectedEntityID = entity.id
-            } label: {
-                HStack {
-                    Text(entity.name)
-                        .lineLimit(1)
-                    Spacer()
-                    Text("Level \(entity.level)")
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Button {
+        LibraryRow(
+            isSelected: selectedEntityID == entity.id,
+            onSelect: { selectedEntityID = entity.id },
+            onDelete: {
                 viewModel.deleteEntity(entity, using: modelContext)
                 if selectedEntityID == entity.id {
                     selectedEntityID = nil
                 }
-            } label: {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.plain)
-            .opacity(hoveredEntityID == entity.id ? 1 : 0)
-            .help("Delete entity")
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(
-            selectedEntityID == entity.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredEntityID == entity.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredEntityID = hovering ? entity.id : nil
-        }
-    }
-
-    var createEntityButton: some View {
-        Button {
-            let newEntity = viewModel.addEntity(using: modelContext)
-            selectedEntityID = newEntity.id
-        } label: {
-            VStack(spacing: 8) {
-                Icons.addCircle
-                    .font(.largeTitle)
-                Text("Create a new entity")
+            },
+            deleteHelpText: "Delete entity"
+        ) {
+            HStack {
+                Text(entity.name)
+                    .lineLimit(1)
+                Spacer()
+                Text("Level \(entity.level)")
+                    .foregroundStyle(.secondary)
             }
         }
-        .buttonStyle(.plain)
     }
 }
 

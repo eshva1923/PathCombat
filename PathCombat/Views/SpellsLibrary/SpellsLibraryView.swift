@@ -6,7 +6,6 @@ struct SpellsLibraryView: View {
     @Query private var spells: [Spell]
     @State private var viewModel = SpellsLibraryViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @State private var hoveredSpellID: UUID?
     @State private var selectedSpellID: UUID?
     @State private var searchText = ""
     @State private var expandedSection: SpellLibrarySection?
@@ -61,7 +60,10 @@ struct SpellsLibraryView: View {
                 SpellDetailView(spell: spell, allSpells: spells, viewModel: viewModel, formatter: formatter)
                     .id(spell.id)
             } else {
-                createSpellButton
+                CreateNewItemButton(title: "Create a new spell") {
+                    let newSpell = viewModel.addSpell(using: modelContext)
+                    selectedSpellID = newSpell.id
+                }
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
@@ -84,8 +86,8 @@ struct SpellsLibraryView: View {
         }
         .onAppear {
             if selectedSpellID == nil {
-                let cantrips = spells.filter { $0.level == 0 && !$0.isFocusSpell }.sorted { $0.name < $1.name }
-                selectedSpellID = cantrips.first?.id ?? groupedSpells.first?.spells.first?.id
+                let cantripGroup = groupedSpells.first { $0.section == .cantrip }
+                selectedSpellID = cantripGroup?.spells.first?.id ?? groupedSpells.first?.spells.first?.id
             }
             if expandedSection == nil {
                 let selected = spells.first(where: { $0.id == selectedSpellID })
@@ -101,112 +103,58 @@ struct SpellsLibraryView: View {
 
 extension SpellsLibraryView {
     private var searchField: some View {
-        HStack {
-            Icons.search.foregroundStyle(.secondary)
-            SelectAllTextField(text: $searchText)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        SearchField(text: $searchText)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
     }
 
     private func sectionHeader(_ section: SpellLibrarySection) -> some View {
-        Button {
-            expandedSection = expandedSection == section ? nil : section
-        } label: {
-            HStack {
-                switch section {
-                case .cantrip:
-                    Text("Cantrips")
-                    Spacer()
-                case .rank(let level):
-                    Text("Rank ")
-                    Spacer()
-                    Icons.spellRank(level, filled: true)
-                        .foregroundStyle(.secondary)
-                case .focus:
-                    Text("Focus")
-                    Spacer()
-                    Icons.focusSpell
-                        .foregroundStyle(.secondary)
-                }
-                Image(systemName: "chevron.right")
-                    .rotationEffect(.degrees(expandedSection == section ? 90 : 0))
+        CollapsibleSectionHeader(
+            isExpanded: expandedSection == section,
+            onToggle: { expandedSection = expandedSection == section ? nil : section }
+        ) {
+            switch section {
+            case .cantrip:
+                Text("Cantrips")
+                Spacer()
+            case .rank(let level):
+                Text("Rank ")
+                Spacer()
+                Icons.spellRank(level, filled: true)
+                    .foregroundStyle(.secondary)
+            case .focus:
+                Text("Focus")
+                Spacer()
+                Icons.focusSpell
                     .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-            .background(Color.secondary.opacity(0.25))
         }
-        .buttonStyle(.plain)
     }
 
     private func spellRow(_ spell: Spell) -> some View {
-        HStack {
-            Button {
-                selectedSpellID = spell.id
-            } label: {
-                HStack {
-                    Text(spell.name)
-                        .lineLimit(1)
-                    Spacer()
-                    if spell.isFocusSpell {
-                        Icons.focusSpell
-                            .foregroundStyle(.secondary)
-                    }
-                    Icons.spellRank(spell.level)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Button {
+        LibraryRow(
+            isSelected: selectedSpellID == spell.id,
+            onSelect: { selectedSpellID = spell.id },
+            onDelete: {
                 viewModel.deleteSpell(spell, using: modelContext)
                 if selectedSpellID == spell.id {
                     selectedSpellID = nil
                 }
-            } label: {
-                Image(systemName: "trash")
             }
-            .buttonStyle(.plain)
-            .opacity(hoveredSpellID == spell.id ? 1 : 0)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(
-            selectedSpellID == spell.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredSpellID == spell.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredSpellID = hovering ? spell.id : nil
-        }
-    }
-
-    var createSpellButton: some View {
-        Button {
-            let newSpell = viewModel.addSpell(using: modelContext)
-            selectedSpellID = newSpell.id
-        } label: {
-            VStack(spacing: 8) {
-                Icons.addCircle
-                    .font(.largeTitle)
-                Text("Create a new spell")
+        ) {
+            HStack {
+                Text(spell.name)
+                    .lineLimit(1)
+                Spacer()
+                if spell.isFocusSpell {
+                    Icons.focusSpell
+                        .foregroundStyle(.secondary)
+                }
+                Icons.spellRank(spell.level)
+                    .foregroundStyle(.secondary)
             }
         }
-        .buttonStyle(.plain)
     }
-
 }
 
 private struct SpellDetailView: View {

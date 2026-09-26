@@ -360,11 +360,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 Spacer()
                 if isTemplate {
                     Button {
-                        if combatEntity.spellcasting == nil {
-                            viewModel.enableSpellcasting()
-                        } else {
-                            viewModel.disableSpellcasting()
-                        }
+                        viewModel.toggleSpellcasting()
                     } label: {
                         Text(combatEntity.spellcasting == nil ? "Enable Spellcasting" : "Disable Spellcasting")
                     }

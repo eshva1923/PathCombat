@@ -15,7 +15,6 @@ struct ConditionPickerSheet: View {
     let onAdd: (Condition, Int?, String?) -> Void
 
     @State private var selectedConditionID: UUID?
-    @State private var hoveredConditionID: UUID?
     @State private var valueText: String = ""
     @State private var damageText: String = ""
     @State private var searchText = ""
@@ -38,21 +37,9 @@ struct ConditionPickerSheet: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding()
-            HStack {
-                Icons.search.foregroundStyle(.secondary)
-                SelectAllTextField(text: $searchText)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            SearchField(text: $searchText)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
             Divider()
             if availableConditions.isEmpty {
                 Spacer()
@@ -109,24 +96,9 @@ struct ConditionPickerSheet: View {
     }
 
     private func conditionRow(_ condition: Condition) -> some View {
-        Button {
-            selectedConditionID = condition.id
-        } label: {
+        LibraryRow(isSelected: selectedConditionID == condition.id, onSelect: { selectedConditionID = condition.id }) {
             Text(condition.name)
                 .fontWeight(.semibold)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 6)
-                .padding(.horizontal, 10)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .background(
-            selectedConditionID == condition.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredConditionID == condition.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredConditionID = hovering ? condition.id : nil
         }
     }
 }

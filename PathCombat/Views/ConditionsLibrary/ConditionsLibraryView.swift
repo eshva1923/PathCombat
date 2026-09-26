@@ -13,7 +13,6 @@ struct ConditionsLibraryView: View {
     @Query private var conditions: [Condition]
     @State private var viewModel = ConditionsLibraryViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @State private var hoveredConditionID: UUID?
     @State private var selectedConditionID: UUID?
     @State private var searchText = ""
 
@@ -24,7 +23,7 @@ struct ConditionsLibraryView: View {
     }
 
     private var filteredConditions: [Condition] {
-        conditions.filter { $0.matchesSearch(searchText) }.sorted { $0.name < $1.name }
+        viewModel.sortedConditions(conditions.filter { $0.matchesSearch(searchText) })
     }
 
     var body: some View {
@@ -53,7 +52,10 @@ struct ConditionsLibraryView: View {
                 conditionDetail(condition)
                     .id(condition.id)
             } else {
-                createConditionButton
+                CreateNewItemButton(title: "Create a new condition") {
+                    let newCondition = viewModel.addCondition(using: modelContext)
+                    selectedConditionID = newCondition.id
+                }
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
@@ -75,7 +77,7 @@ struct ConditionsLibraryView: View {
         }
         .onAppear {
             if selectedConditionID == nil {
-                selectedConditionID = conditions.sorted { $0.name < $1.name }.first?.id
+                selectedConditionID = viewModel.sortedConditions(conditions).first?.id
             }
         }
     }
@@ -83,69 +85,25 @@ struct ConditionsLibraryView: View {
 
 extension ConditionsLibraryView {
     private var searchField: some View {
-        HStack {
-            Icons.search.foregroundStyle(.secondary)
-            SelectAllTextField(text: $searchText)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        SearchField(text: $searchText)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
     }
 
     private func conditionRow(_ condition: Condition) -> some View {
-        HStack {
-            Button {
-                selectedConditionID = condition.id
-            } label: {
-                Text(condition.name)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Button {
+        LibraryRow(
+            isSelected: selectedConditionID == condition.id,
+            onSelect: { selectedConditionID = condition.id },
+            onDelete: {
                 viewModel.deleteCondition(condition, using: modelContext)
                 if selectedConditionID == condition.id {
                     selectedConditionID = nil
                 }
-            } label: {
-                Image(systemName: "trash")
             }
-            .buttonStyle(.plain)
-            .opacity(hoveredConditionID == condition.id ? 1 : 0)
+        ) {
+            Text(condition.name)
+                .lineLimit(1)
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(
-            selectedConditionID == condition.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredConditionID == condition.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredConditionID = hovering ? condition.id : nil
-        }
-    }
-
-    var createConditionButton: some View {
-        Button {
-            let newCondition = viewModel.addCondition(using: modelContext)
-            selectedConditionID = newCondition.id
-        } label: {
-            VStack(spacing: 8) {
-                Icons.addCircle
-                    .font(.largeTitle)
-                Text("Create a new condition")
-            }
-        }
-        .buttonStyle(.plain)
     }
 
     private func damageBinding(for condition: Condition) -> Binding<String> {

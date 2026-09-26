@@ -16,7 +16,6 @@ struct EntityPickerSheet: View {
     let onAdd: (CombatEntity) -> Void
 
     @State private var selectedEntityID: UUID?
-    @State private var hoveredEntityID: UUID?
     @State private var searchText = ""
 
     private var availableEntities: [CombatEntity] {
@@ -36,21 +35,9 @@ struct EntityPickerSheet: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding()
-            HStack {
-                Icons.search.foregroundStyle(.secondary)
-                SelectAllTextField(text: $searchText)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            SearchField(text: $searchText)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
             Divider()
             if availableEntities.isEmpty {
                 Spacer()
@@ -89,9 +76,7 @@ struct EntityPickerSheet: View {
 
     private func entityRow(_ entity: CombatEntity) -> some View {
         let addable = isAddable(entity)
-        return Button {
-            selectedEntityID = entity.id
-        } label: {
+        return LibraryRow(isSelected: selectedEntityID == entity.id, onSelect: { selectedEntityID = entity.id }) {
             VStack(alignment: .leading) {
                 HStack {
                     if let roleIcon = entity.role.icon {
@@ -111,21 +96,9 @@ struct EntityPickerSheet: View {
                     }
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
         .disabled(!addable)
         .opacity(addable ? 1 : 0.4)
-        .background(
-            selectedEntityID == entity.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredEntityID == entity.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredEntityID = hovering ? entity.id : nil
-        }
         .help(addable ? "" : "Only one \(entity.name) can be added to an encounter")
     }
 }

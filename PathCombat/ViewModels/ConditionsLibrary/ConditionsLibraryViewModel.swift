@@ -33,6 +33,10 @@ final class ConditionsLibraryViewModel {
         condition.damage = newValue.trimmingCharacters(in: .whitespaces).isEmpty ? nil : newValue
     }
 
+    func sortedConditions(_ conditions: [Condition]) -> [Condition] {
+        conditions.sorted { $0.name < $1.name }
+    }
+
     func navigationTitle(selectedID: UUID?, in conditions: [Condition]) -> String {
         if let selectedID,
            let condition = conditions.first(where: { $0.id == selectedID }) {

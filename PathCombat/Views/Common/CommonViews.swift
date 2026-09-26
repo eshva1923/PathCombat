@@ -23,6 +23,114 @@ extension Color {
     }
 }
 
+/// The search field used at the top of every library/tracker sidebar and picker sheet:
+/// a search icon, a select-all-on-focus text field, and a clear button that appears once
+/// there's text. Callers own their own outer padding, since that varies by context.
+struct SearchField: View {
+    @Binding var text: String
+    var placeholder: String = ""
+
+    var body: some View {
+        HStack {
+            Icons.search.foregroundStyle(.secondary)
+            SelectAllTextField(placeholder, text: $text)
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+/// A tappable, collapsible section header (chevron rotates to indicate expanded state) used
+/// by every sidebar that groups its rows into sections. Callers supply the leading content
+/// (label text, optional trailing icon) via `content`; this owns the chevron, background,
+/// and toggle behavior shared by every section header.
+struct CollapsibleSectionHeader<Content: View>: View {
+    let isExpanded: Bool
+    let onToggle: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack {
+                content()
+                Image(systemName: "chevron.right")
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+            .background(Color.secondary.opacity(0.5))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// A selectable, hoverable sidebar/picker row: tapping selects it, hovering reveals an
+/// optional trailing delete button, and the background reflects selected/hovered state.
+/// Used by every library sidebar row and picker-sheet row — callers supply only the row's
+/// own content.
+struct LibraryRow<Content: View>: View {
+    let isSelected: Bool
+    let onSelect: () -> Void
+    var onDelete: (() -> Void)? = nil
+    var deleteHelpText: String? = nil
+    @ViewBuilder let content: () -> Content
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack {
+            Button(action: onSelect) {
+                content()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if let onDelete {
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.plain)
+                .opacity(isHovering ? 1 : 0)
+                .help(deleteHelpText ?? "")
+            }
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(
+            isSelected ? Color.accentColor.opacity(0.25) : (isHovering ? Color.secondary.opacity(0.15) : Color.clear)
+        )
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+}
+
+/// The "create a new X" placeholder shown in a detail pane when nothing is selected.
+struct CreateNewItemButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Icons.addCircle
+                    .font(.largeTitle)
+                Text(title)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct LabelTag: View {
     let text: String
     let color: Color

@@ -10,7 +10,6 @@ struct SpellPickerSheet: View {
     let onAdd: (Spell) -> Void
 
     @State private var selectedSpellID: UUID?
-    @State private var hoveredSpellID: UUID?
     @State private var searchText = ""
 
     private var availableSpells: [Spell] {
@@ -33,21 +32,9 @@ struct SpellPickerSheet: View {
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding()
-            HStack {
-                Icons.search.foregroundStyle(.secondary)
-                SelectAllTextField(text: $searchText)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            SearchField(text: $searchText)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
             Divider()
             if availableSpells.isEmpty {
                 Spacer()
@@ -86,9 +73,7 @@ struct SpellPickerSheet: View {
     }
 
     private func spellRow(_ spell: Spell) -> some View {
-        Button {
-            selectedSpellID = spell.id
-        } label: {
+        LibraryRow(isSelected: selectedSpellID == spell.id, onSelect: { selectedSpellID = spell.id }) {
             HStack {
                 Text(spell.name)
                     .fontWeight(.semibold)
@@ -103,18 +88,6 @@ struct SpellPickerSheet: View {
                         .cornerRadius(5)
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .background(
-            selectedSpellID == spell.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredSpellID == spell.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredSpellID = hovering ? spell.id : nil
         }
     }
 }

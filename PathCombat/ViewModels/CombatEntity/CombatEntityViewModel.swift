@@ -137,6 +137,14 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
         }
     }
 
+    func toggleSpellcasting() {
+        if combatEntity.spellcasting == nil {
+            enableSpellcasting()
+        } else {
+            disableSpellcasting()
+        }
+    }
+
     func disableSpellcasting() {
         combatEntity.spellcasting = nil
     }

@@ -13,7 +13,6 @@ struct CombatTrackerView: View {
     @Query private var encounters: [Encounter]
     @State private var viewModel = CombatTrackerViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @State private var hoveredEncounterID: UUID?
     @State private var selectedEncounterID: UUID?
     @State private var searchText = ""
 
@@ -59,8 +58,13 @@ struct CombatTrackerView: View {
             if let selectedEncounterID,
                let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
                 EncounterView(encounter: encounter)
+                    .id(encounter.id)
             } else {
-                createEncounterButton.padding()
+                CreateNewItemButton(title: "Create a new encounter") {
+                    let newEncounter = viewModel.addEncounter(using: modelContext)
+                    selectedEncounterID = newEncounter.id
+                }
+                .padding()
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
@@ -80,21 +84,9 @@ struct CombatTrackerView: View {
 
 extension CombatTrackerView {
     private var searchField: some View {
-        HStack {
-            Icons.search.foregroundStyle(.secondary)
-            SelectAllTextField(text: $searchText)
-            if !searchText.isEmpty {
-                Button {
-                    searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        SearchField(text: $searchText)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
     }
 
     private func sessionHeader(_ session: Int) -> some View {
@@ -109,41 +101,24 @@ extension CombatTrackerView {
     }
 
     private func encounterRow(_ encounter: Encounter) -> some View {
-        HStack {
-            Button {
-                selectedEncounterID = encounter.id
-            } label: {
-                HStack {
-                    Text(encounter.name)
-                        .lineLimit(1)
-                    Spacer()
-                    Text("\(encounter.session)")
-                }
-                .strikethrough(encounter.completed)
-                .foregroundStyle(encounter.completed ? .secondary : .primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Button {
+        LibraryRow(
+            isSelected: selectedEncounterID == encounter.id,
+            onSelect: { selectedEncounterID = encounter.id },
+            onDelete: {
                 viewModel.deleteEncounter(encounter, using: modelContext)
                 if selectedEncounterID == encounter.id {
                     selectedEncounterID = nil
                 }
-            } label: {
-                Image(systemName: "trash")
             }
-            .buttonStyle(.plain)
-            .opacity(hoveredEncounterID == encounter.id ? 1 : 0)
-        }
-        .padding(6)
-        .background(
-            selectedEncounterID == encounter.id
-                ? Color.accentColor.opacity(0.25)
-                : (hoveredEncounterID == encounter.id ? Color.secondary.opacity(0.15) : Color.clear)
-        )
-        .onHover { hovering in
-            hoveredEncounterID = hovering ? encounter.id : nil
+        ) {
+            HStack {
+                Text(encounter.name)
+                    .lineLimit(1)
+                Spacer()
+                Text("\(encounter.session)")
+            }
+            .strikethrough(encounter.completed)
+            .foregroundStyle(encounter.completed ? .secondary : .primary)
         }
     }
 
@@ -159,19 +134,6 @@ extension CombatTrackerView {
             }
             .padding(.vertical, 8)
             .contentShape(Rectangle())
-        }
-    }
-
-    var createEncounterButton: some View {
-        Button {
-            let newEncounter = viewModel.addEncounter(using: modelContext)
-            selectedEncounterID = newEncounter.id
-        } label: {
-            VStack(spacing: 8) {
-                Icons.addCircle
-                    .font(.largeTitle)
-                Text("Create a new encounter")
-            }
         }
     }
 }
