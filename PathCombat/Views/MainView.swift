@@ -21,7 +21,7 @@ struct MainView: View {
             case .spellsLibrary:
                 SpellsLibraryView()
             case .rulesAndConditions:
-                ConditionsLibraryView()
+                RulesLibraryView()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

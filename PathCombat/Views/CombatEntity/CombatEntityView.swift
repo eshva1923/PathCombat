@@ -208,7 +208,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
 
     var deadIcon: some View {
         Icons.dead
-            .frame(width: 16, height: 16)
+            .frame(width: 36, height: 36)
             .rotationEffect(.degrees(90))
             .foregroundStyle(.red)
     }

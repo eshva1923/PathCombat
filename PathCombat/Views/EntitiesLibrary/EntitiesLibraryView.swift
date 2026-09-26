@@ -83,7 +83,11 @@ struct EntitiesLibraryView: View {
                     selectedEntityID = newEntity.id
                     expandedRole = newEntity.role
                 } label: {
-                    Icons.add
+                    HStack {
+                        Text("Add a new entity")
+                        Icons.add
+                    }
+                    .padding(.horizontal)
                 }
             }
         }

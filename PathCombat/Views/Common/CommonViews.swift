@@ -67,7 +67,7 @@ struct CollapsibleSectionHeader<Content: View>: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .contentShape(Rectangle())
-            .background(Color.secondary.opacity(0.5))
+            .background(Color.secondary.opacity(0.25))
         }
         .buttonStyle(.plain)
     }

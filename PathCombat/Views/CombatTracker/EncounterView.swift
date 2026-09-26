@@ -198,7 +198,7 @@ extension EncounterView {
             }
             if entity.isDead {
                 Icons.dead
-                    .frame(width: 16, height: 16)
+                    .frame(width: 36, height: 36)
                     .rotationEffect(.degrees(90))
                     .foregroundStyle(.red)
             }

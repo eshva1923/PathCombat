@@ -75,7 +75,11 @@ struct SpellsLibraryView: View {
                     selectedSpellID = newSpell.id
                     expandedSection = newSpell.isFocusSpell ? .focus : (newSpell.level == 0 ? .cantrip : .rank(newSpell.level))
                 } label: {
-                    Icons.add
+                    HStack {
+                        Text("Add a new spell")
+                        Icons.add
+                    }
+                    .padding(.horizontal)
                 }
             }
         }

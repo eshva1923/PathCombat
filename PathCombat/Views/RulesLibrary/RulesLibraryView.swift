@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct ConditionsLibraryView: View {
+struct RulesLibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var conditions: [Condition]
     @State private var viewModel = ConditionsLibraryViewModel()
@@ -66,7 +66,11 @@ struct ConditionsLibraryView: View {
                     let newCondition = viewModel.addCondition(using: modelContext)
                     selectedConditionID = newCondition.id
                 } label: {
-                    Icons.add
+                    HStack {
+                        Text("Add a condition")
+                        Icons.add
+                    }
+                    .padding(.horizontal)
                 }
             }
         }
@@ -83,7 +87,7 @@ struct ConditionsLibraryView: View {
     }
 }
 
-extension ConditionsLibraryView {
+extension RulesLibraryView {
     private var searchField: some View {
         SearchField(text: $searchText)
             .padding(.horizontal, 10)
@@ -151,6 +155,6 @@ extension ConditionsLibraryView {
         name: "Frightened",
         id: nil,
         description: "You're gripped by fear and take a penalty to checks and DCs equal to the condition's value."))
-    return ConditionsLibraryView()
+    return RulesLibraryView()
         .modelContainer(container)
 }

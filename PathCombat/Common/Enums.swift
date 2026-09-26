@@ -32,7 +32,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .combatTracker: return "shield.lefthalf.filled"
         case .entitiesLibrary: return "person.3.fill"
         case .spellsLibrary: return "wand.and.stars"
-        case .rulesAndConditions: return "book.closed.fill"
+        case .rulesAndConditions: return "books.vertical.fill"
         }
     }
 }
