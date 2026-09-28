@@ -15,7 +15,7 @@ struct SpellPickerSheet: View {
     private var availableSpells: [Spell] {
         librarySpells
             .filter { $0.isFocusSpell == isFocusSpell && !excludedSpellIDs.contains($0.id) }
-            .filter { level == nil || $0.level == level }
+            .filter { level == nil || (level == 0 ? $0.isCantrip : ($0.level == level && !$0.isCantrip)) }
             .filter { $0.matchesSearch(searchText) }
             .sorted { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
     }

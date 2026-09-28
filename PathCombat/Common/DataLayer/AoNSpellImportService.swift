@@ -79,8 +79,7 @@ enum AoNSpellImportService {
         guard let aonID = AoNSearchClient.aonID(from: keeper.url) else { return nil }
 
         let isFocusSpell = keeper.spell_type == "Focus"
-        let isCantrip = keeper.spell_type == "Cantrip"
-        let level = isCantrip ? 0 : (keeper.level ?? 1)
+        let level = keeper.level ?? 1
         let traditions = (keeper.tradition ?? []).compactMap { SpellTradition(rawValue: $0) }
         let tags = keeper.trait_raw ?? []
 

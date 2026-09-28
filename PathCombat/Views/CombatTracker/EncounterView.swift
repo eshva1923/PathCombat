@@ -9,6 +9,8 @@ struct EncounterView: View {
     @State private var isShowingEntityPicker = false
     @State private var selectedEntityID: UUID?
     @State private var tagsText: String
+    @State private var isConfirmingReset = false
+    @State private var entityPendingRemoval: EncounterCombatEntity?
 
     let formatter: NumberFormatter = {
         let formatter = NumberFormatter()
@@ -42,7 +44,11 @@ struct EncounterView: View {
 
                                     if selectedEntityID == entity.id {
                                         Button {
-                                            viewModel.deleteEntity(entity)
+                                            if viewModel.hasStartedCombat {
+                                                entityPendingRemoval = entity
+                                            } else {
+                                                viewModel.deleteEntity(entity)
+                                            }
                                         } label: {
                                             HStack {
                                                 Text("Remove this entity")
@@ -96,6 +102,27 @@ struct EncounterView: View {
                 viewModel.addEntity(from: template)
             }
         }
+        .confirmationDialog("Reset the encounter?", isPresented: $isConfirmingReset) {
+            Button("Reset", role: .destructive) {
+                viewModel.resetEncounter()
+            }
+        } message: {
+            Text("This clears initiative order and the round counter.")
+        }
+        .confirmationDialog(
+            "Remove \(entityPendingRemoval?.name ?? "") from this encounter?",
+            isPresented: Binding(
+                get: { entityPendingRemoval != nil },
+                set: { isPresented in if !isPresented { entityPendingRemoval = nil } }
+            )
+        ) {
+            Button("Remove", role: .destructive) {
+                if let entityPendingRemoval {
+                    viewModel.deleteEntity(entityPendingRemoval)
+                }
+                entityPendingRemoval = nil
+            }
+        }
     }
 }
 
@@ -109,7 +136,11 @@ extension EncounterView {
 
                 Spacer()
                 Button {
-                    viewModel.resetEncounter()
+                    if viewModel.hasStartedCombat {
+                        isConfirmingReset = true
+                    } else {
+                        viewModel.resetEncounter()
+                    }
                 } label: {
                     HStack {
                         Text("Reset")

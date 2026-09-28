@@ -20,7 +20,7 @@ final class Spell {
          range: String? = nil, area: String? = nil, tags: [String]? = nil) {
         self.id = id ?? UUID()
         self.name = name ?? "Unnamed spell"
-        self.level = level ?? 0
+        self.level = level ?? 1
         self.isFocusSpell = isFocusSpell ?? false
         self.details = details ?? ""
         self.aonID = aonID
@@ -38,6 +38,10 @@ final class Spell {
     var aonURL: URL? {
         guard let aonID else { return nil }
         return URL(string: "https://2e.aonprd.com/Spells.aspx?ID=\(aonID)")
+    }
+
+    var isCantrip: Bool {
+        tags.contains { $0.caseInsensitiveCompare("Cantrip") == .orderedSame }
     }
 
     func matchesSearch(_ query: String) -> Bool {

@@ -32,21 +32,34 @@ final class SpellsLibraryViewModel {
         return AppSection.spellsLibrary.rawValue
     }
 
-    /// Groups non-focus spells by rank; every focus spell (regardless of its own rank) is
-    /// pulled into a single trailing "Focus" section instead, ordered by rank then name.
+    func section(for spell: Spell) -> SpellLibrarySection {
+        if spell.isFocusSpell { return .focus }
+        if spell.isCantrip { return .cantrip }
+        return .rank(spell.level)
+    }
+
+    /// Cantrips and focus spells are pulled out into their own sections regardless of rank
+    /// (cantrips first, focus last), each ordered by rank then name; everything else groups
+    /// by rank.
     func groupedSpells(_ spells: [Spell]) -> [(section: SpellLibrarySection, spells: [Spell])] {
+        let byRankThenName: (Spell, Spell) -> Bool = { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
+
+        let cantrips = spells.filter { $0.isCantrip && !$0.isFocusSpell }
         let focusSpells = spells.filter { $0.isFocusSpell }
-        let rankedSpells = spells.filter { !$0.isFocusSpell }
+        let rankedSpells = spells.filter { !$0.isCantrip && !$0.isFocusSpell }
+
+        var result: [(section: SpellLibrarySection, spells: [Spell])] = []
+        if !cantrips.isEmpty {
+            result.append((.cantrip, cantrips.sorted(by: byRankThenName)))
+        }
 
         let grouped = Dictionary(grouping: rankedSpells, by: { $0.level })
-        var result: [(section: SpellLibrarySection, spells: [Spell])] = grouped.keys.sorted().map { level in
-            let section: SpellLibrarySection = level == 0 ? .cantrip : .rank(level)
-            return (section, grouped[level, default: []].sorted { $0.name < $1.name })
+        result += grouped.keys.sorted().map { level in
+            (.rank(level), grouped[level, default: []].sorted { $0.name < $1.name })
         }
 
         if !focusSpells.isEmpty {
-            let sortedFocus = focusSpells.sorted { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
-            result.append((.focus, sortedFocus))
+            result.append((.focus, focusSpells.sorted(by: byRankThenName)))
         }
 
         return result

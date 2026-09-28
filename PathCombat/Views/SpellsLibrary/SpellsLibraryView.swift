@@ -73,7 +73,7 @@ struct SpellsLibraryView: View {
                 Button {
                     let newSpell = viewModel.addSpell(using: modelContext)
                     selectedSpellID = newSpell.id
-                    expandedSection = newSpell.isFocusSpell ? .focus : (newSpell.level == 0 ? .cantrip : .rank(newSpell.level))
+                    expandedSection = viewModel.section(for: newSpell)
                 } label: {
                     HStack {
                         Text("Add a new spell")
@@ -96,7 +96,7 @@ struct SpellsLibraryView: View {
             if expandedSection == nil {
                 let selected = spells.first(where: { $0.id == selectedSpellID })
                 if let selected {
-                    expandedSection = selected.isFocusSpell ? .focus : (selected.level == 0 ? .cantrip : .rank(selected.level))
+                    expandedSection = viewModel.section(for: selected)
                 } else {
                     expandedSection = groupedSpells.first?.section
                 }
