@@ -173,7 +173,7 @@ struct ConditionTag: View {
     var body: some View {
         Text(text)
             .padding(3)
-            .background(isFilled ? color : Color.secondary.opacity(0.15))
+            .background(isFilled || isHovering ? color : Color.secondary.opacity(0.15))
             .cornerRadius(5)
             .overlay(
                 RoundedRectangle(cornerRadius: 5)
@@ -184,19 +184,7 @@ struct ConditionTag: View {
                 isHovering = hovering
             }
             .onTapGesture {
-                isHovering = false
-                DispatchQueue.main.async {
-                    isShowingDetail = true
-                }
-            }
-            .popover(isPresented: $isHovering, arrowEdge: .bottom) {
-                Text(description.isEmpty ? "No description" : description)
-                    .padding()
-                    .frame(maxWidth: 280, alignment: .leading)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(color, lineWidth: 3)
-                    )
+                isShowingDetail = true
             }
             .sheet(isPresented: $isShowingDetail) {
                 VStack(alignment: .leading, spacing: 16) {
@@ -258,7 +246,7 @@ struct SpellTag: View {
     var body: some View {
         Text(spell.name)
             .padding(3)
-            .background(Color.secondary.opacity(0.15))
+            .background(isHovering ? Color.accentColor : Color.secondary.opacity(0.15))
             .cornerRadius(5)
             .overlay(
                 RoundedRectangle(cornerRadius: 5)
@@ -269,19 +257,7 @@ struct SpellTag: View {
                 isHovering = hovering
             }
             .onTapGesture {
-                isHovering = false
-                DispatchQueue.main.async {
-                    isShowingDetail = true
-                }
-            }
-            .popover(isPresented: $isHovering, arrowEdge: .bottom) {
-                Text(spell.details.isEmpty ? "No description" : spell.details)
-                    .padding()
-                    .frame(maxWidth: 280, alignment: .leading)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(Color.accentColor, lineWidth: 3)
-                    )
+                isShowingDetail = true
             }
             .sheet(isPresented: $isShowingDetail) {
                 VStack(alignment: .leading, spacing: 16) {
@@ -299,6 +275,9 @@ struct SpellTag: View {
                         }
                         if !spell.area.isEmpty {
                             Text("Area: \(spell.area)")
+                        }
+                        if !spell.target.isEmpty {
+                            Text("Target: \(spell.target)")
                         }
                     }
                     .font(.caption)

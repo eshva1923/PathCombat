@@ -15,6 +15,7 @@ struct CombatTrackerView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedEncounterID: UUID?
     @State private var searchText = ""
+    @State private var expandedSession: Int?
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -36,15 +37,19 @@ struct CombatTrackerView: View {
                 searchField
                 Divider()
                 ScrollView(.vertical) {
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
                         ForEach(groupedEncounters, id: \.session) { group in
-                            sessionHeader(group.session)
-                            ForEach(group.encounters) { encounter in
-                                encounterRow(encounter)
-                                Divider()
+                            Section {
+                                if !searchText.isEmpty || expandedSession == group.session {
+                                    ForEach(group.encounters) { encounter in
+                                        encounterRow(encounter)
+                                        Divider()
+                                    }
+                                }
+                            } header: {
+                                sessionHeader(group.session)
                             }
                         }
-                        addEncounterRow.padding(4)
                     }
                 }
             }
@@ -69,6 +74,21 @@ struct CombatTrackerView: View {
         }
         .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedEncounterID, in: encounters))
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    let newEncounter = viewModel.addEncounter(using: modelContext)
+                    selectedEncounterID = newEncounter.id
+                    expandedSession = newEncounter.session
+                } label: {
+                    HStack {
+                        Text("Add a new encounter")
+                        Icons.add
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
         .onChange(of: columnVisibility) { _, newValue in
             if newValue != .all {
                 columnVisibility = .all
@@ -76,7 +96,11 @@ struct CombatTrackerView: View {
         }
         .onAppear {
             if selectedEncounterID == nil {
-                selectedEncounterID = encounters.first?.id
+                selectedEncounterID = groupedEncounters.first?.encounters.first?.id
+            }
+            if expandedSession == nil {
+                let selected = encounters.first(where: { $0.id == selectedEncounterID })
+                expandedSession = selected?.session ?? groupedEncounters.first?.session
             }
         }
     }
@@ -90,14 +114,13 @@ extension CombatTrackerView {
     }
 
     private func sessionHeader(_ session: Int) -> some View {
-        Text("Session \(session)")
-            .font(.caption)
-            .fontWeight(.bold)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 2)
+        CollapsibleSectionHeader(
+            isExpanded: expandedSession == session,
+            onToggle: { expandedSession = expandedSession == session ? nil : session }
+        ) {
+            Text("Session \(session)")
+            Spacer()
+        }
     }
 
     private func encounterRow(_ encounter: Encounter) -> some View {
@@ -122,20 +145,6 @@ extension CombatTrackerView {
         }
     }
 
-    var addEncounterRow: some View {
-        Button {
-            let newEncounter = viewModel.addEncounter(using: modelContext)
-            selectedEncounterID = newEncounter.id
-        } label: {
-            HStack {
-                Spacer()
-                Icons.add
-                Spacer()
-            }
-            .padding(.vertical, 8)
-            .contentShape(Rectangle())
-        }
-    }
 }
 
 #Preview {

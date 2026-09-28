@@ -15,7 +15,7 @@ enum AoNSpellImportService {
     ]
 
     private static let sourceFields = [
-        "name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "trait_raw",
+        "name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "target", "trait_raw",
         "url", "markdown", "id", "legacy_id", "remaster_id"
     ]
 
@@ -27,6 +27,7 @@ enum AoNSpellImportService {
         let actions: String?
         let range_raw: String?
         let area_raw: String?
+        let target: String?
         let trait_raw: [String]?
         let url: String?
         let markdown: String?
@@ -64,6 +65,7 @@ enum AoNSpellImportService {
                 match.speed = mapped.speed
                 match.range = mapped.range
                 match.area = mapped.area
+                match.target = mapped.target
                 match.tags = mapped.tags
             } else {
                 context.insert(mapped)
@@ -109,6 +111,7 @@ enum AoNSpellImportService {
             speed: speed,
             range: AoNMarkupCleaner.stripLinks(keeper.range_raw ?? ""),
             area: AoNMarkupCleaner.stripLinks(keeper.area_raw ?? ""),
+            target: AoNMarkupCleaner.stripLinks(keeper.target ?? ""),
             tags: tags)
     }
 

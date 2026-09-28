@@ -20,7 +20,7 @@ enum DataBackupService {
     private static let encountersMarker = "#Encounters"
 
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent", "aonID"]
-    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area", "tags"]
+    private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area", "tags", "target"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
         "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
@@ -264,7 +264,8 @@ enum DataBackupService {
             String(spell.speed),
             spell.range,
             spell.area,
-            spell.tags.joined(separator: ";")
+            spell.tags.joined(separator: ";"),
+            spell.target
         ]
     }
 
@@ -283,6 +284,7 @@ enum DataBackupService {
             speed: row.count >= 8 ? Int(row[7]) : nil,
             range: row.count >= 9 ? row[8] : nil,
             area: row.count >= 10 ? row[9] : nil,
+            target: row.count >= 12 ? row[11] : nil,
             tags: row.count >= 11 ? splitList(row[10]) : nil)
     }
 

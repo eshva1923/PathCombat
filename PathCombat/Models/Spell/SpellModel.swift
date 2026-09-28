@@ -13,11 +13,12 @@ final class Spell {
     var speed: Int
     var range: String
     var area: String
+    var target: String
     var tags: [String]
 
     init(name: String?, id: UUID?, level: Int?, isFocusSpell: Bool?, details: String?,
          aonID: Int? = nil, traditions: [SpellTradition]? = nil, speed: Int? = nil,
-         range: String? = nil, area: String? = nil, tags: [String]? = nil) {
+         range: String? = nil, area: String? = nil, target: String? = nil, tags: [String]? = nil) {
         self.id = id ?? UUID()
         self.name = name ?? "Unnamed spell"
         self.level = level ?? 1
@@ -28,6 +29,7 @@ final class Spell {
         self.speed = speed ?? 1
         self.range = range ?? ""
         self.area = area ?? ""
+        self.target = target ?? ""
         self.tags = tags ?? []
     }
 

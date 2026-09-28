@@ -215,6 +215,9 @@ private struct SpellDetailView: View {
                     Text("Area")
                         .fontWeight(.semibold)
                     SelectAllTextField("e.g. 15-foot cone", text: $spell.area)
+                    Text("Target")
+                        .fontWeight(.semibold)
+                    SelectAllTextField("e.g. 1 creature", text: $spell.target)
                 }
                 HStack {
                     Text("Traditions")
