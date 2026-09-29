@@ -43,19 +43,38 @@ enum DataBackupCommands {
         }
     }
 
-    static func importSpellsFromAoN(context: ModelContext) {
-        guard let includeLegacyDescriptions = confirmAoNImport(
-            title: "Import Spells from Archive of Nethys?",
-            message: "Downloads the current Pathfinder 2e spell list (about 1,800 spells) from 2e.aonprd.com and adds them to your Spells Library. Spells already imported from Archive of Nethys are refreshed to match the latest data; spells you created yourself are not affected."
+    /// Imports spells, conditions, and actions/activities from Archive of Nethys in one go.
+    /// Blocked once any of the three libraries already contains AoN-imported content (an
+    /// entry with an `aonID`), so a re-run never hits Archive of Nethys's search index just to
+    /// discover there's nothing new to do. Libraries containing only hand-made entries (no
+    /// `aonID`) don't count, so a first import is always available.
+    static func importDataFromAoN(context: ModelContext) {
+        guard !hasImportedAoNData(context: context) else {
+            let alert = NSAlert()
+            alert.messageText = "Already Imported"
+            alert.informativeText = "Your Spells, Conditions, or Rules library already contains content imported from Archive of Nethys. Wipe the relevant library from File → Wipe Data first if you want to re-import."
+            alert.alertStyle = .informational
+            alert.runModal()
+            return
+        }
+
+        guard confirmAoNImport(
+            title: "Import Data from Archive of Nethys?",
+            message: "Downloads the current, ORC-licensed Pathfinder 2e spells, conditions, and actions/activities from 2e.aonprd.com and adds them to your libraries. Legacy (pre-remaster OGL) entries with no ORC equivalent are skipped. Anything already in your libraries, including your own entries, is not affected."
         ) else { return }
 
         Task {
             do {
-                let count = try await AoNSpellImportService.importSpells(context: context, includeLegacyDescriptions: includeLegacyDescriptions)
+                let spells = try await AoNSpellImportService.importSpells(context: context)
+                let conditions = try await AoNConditionImportService.importConditions(context: context)
+                let actions = try await AoNActionImportService.importActions(context: context)
                 await MainActor.run {
                     let alert = NSAlert()
                     alert.messageText = "Import Complete"
-                    alert.informativeText = "Imported \(count) spells from Archive of Nethys."
+                    alert.informativeText = """
+                    Imported \(spells.imported) spells, \(conditions.imported) conditions, and \(actions.actions) actions and \(actions.activities) activities from Archive of Nethys.
+                    Skipped \(spells.skipped + conditions.skipped + actions.skipped) legacy (non-ORC) entries.
+                    """
                     alert.runModal()
                 }
             } catch {
@@ -66,68 +85,22 @@ enum DataBackupCommands {
         }
     }
 
-    static func importConditionsFromAoN(context: ModelContext) {
-        guard let includeLegacyDescriptions = confirmAoNImport(
-            title: "Import Conditions from Archive of Nethys?",
-            message: "Downloads the current Pathfinder 2e condition list (about 56 conditions) from 2e.aonprd.com and adds them to your Conditions Library. Conditions already imported from Archive of Nethys are refreshed to match the latest data; conditions you created yourself are not affected."
-        ) else { return }
-
-        Task {
-            do {
-                let count = try await AoNConditionImportService.importConditions(context: context, includeLegacyDescriptions: includeLegacyDescriptions)
-                await MainActor.run {
-                    let alert = NSAlert()
-                    alert.messageText = "Import Complete"
-                    alert.informativeText = "Imported \(count) conditions from Archive of Nethys."
-                    alert.runModal()
-                }
-            } catch {
-                await MainActor.run {
-                    presentError(error, title: "Import Failed")
-                }
-            }
-        }
+    private static func hasImportedAoNData(context: ModelContext) -> Bool {
+        let spellCount = (try? context.fetchCount(FetchDescriptor<Spell>(predicate: #Predicate { $0.aonID != nil }))) ?? 0
+        let conditionCount = (try? context.fetchCount(FetchDescriptor<Condition>(predicate: #Predicate { $0.aonID != nil }))) ?? 0
+        let actionCount = (try? context.fetchCount(FetchDescriptor<RuleAction>(predicate: #Predicate { $0.aonID != nil }))) ?? 0
+        return spellCount > 0 || conditionCount > 0 || actionCount > 0
     }
 
-    static func importActionsFromAoN(context: ModelContext) {
-        guard let includeLegacyDescriptions = confirmAoNImport(
-            title: "Import Actions and Activities from Archive of Nethys?",
-            message: "Downloads the current Pathfinder 2e action list (about 550 actions and activities) from 2e.aonprd.com and adds them to your Rules Library. Entries already imported from Archive of Nethys are refreshed to match the latest data; entries you created yourself are not affected."
-        ) else { return }
-
-        Task {
-            do {
-                let counts = try await AoNActionImportService.importActions(context: context, includeLegacyDescriptions: includeLegacyDescriptions)
-                await MainActor.run {
-                    let alert = NSAlert()
-                    alert.messageText = "Import Complete"
-                    alert.informativeText = "Imported \(counts.actions) actions and \(counts.activities) activities from Archive of Nethys."
-                    alert.runModal()
-                }
-            } catch {
-                await MainActor.run {
-                    presentError(error, title: "Import Failed")
-                }
-            }
-        }
-    }
-
-    /// Shows the shared AoN import confirmation alert with a "merge legacy description" checkbox
-    /// (defaulted off). Returns the checkbox state if the user confirmed, or `nil` if cancelled.
-    private static func confirmAoNImport(title: String, message: String) -> Bool? {
+    /// Shows the shared AoN import confirmation alert. Returns whether the user confirmed.
+    private static func confirmAoNImport(title: String, message: String) -> Bool {
         let confirmation = NSAlert()
         confirmation.messageText = title
         confirmation.informativeText = message
         confirmation.alertStyle = .informational
         confirmation.addButton(withTitle: "Import")
         confirmation.addButton(withTitle: "Cancel")
-
-        let checkbox = NSButton(checkboxWithTitle: "Allow merging description from legacy content", target: nil, action: nil)
-        checkbox.state = .off
-        confirmation.accessoryView = checkbox
-
-        guard confirmation.runModal() == .alertFirstButtonReturn else { return nil }
-        return checkbox.state == .on
+        return confirmation.runModal() == .alertFirstButtonReturn
     }
 
     static func wipeEncounters(context: ModelContext) {

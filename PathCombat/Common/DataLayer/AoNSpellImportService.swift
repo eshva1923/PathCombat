@@ -5,7 +5,7 @@ import SwiftData
 enum AoNSpellImportService {
     private static let sourceFields = [
         "name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "target", "trait_raw",
-        "url", "markdown", "id", "legacy_id", "remaster_id"
+        "url", "markdown", "legacy_id", "remaster_id", "release_date"
     ]
 
     private struct SpellSource: AoNVersionedSource {
@@ -20,18 +20,19 @@ enum AoNSpellImportService {
         let trait_raw: [String]?
         let url: String?
         let markdown: String?
-        let id: String
         let legacy_id: [String]?
         let remaster_id: [String]?
+        let release_date: String?
     }
 
-    /// Fetches the current spell list and upserts it into the store, matching existing
-    /// spells by `aonID`. Spells already imported get every field refreshed from AoN;
-    /// spells you created yourself (no matching `aonID`) are never touched. Returns the
-    /// number of spells processed.
-    static func importSpells(context: ModelContext, includeLegacyDescriptions: Bool = false) async throws -> Int {
+    /// Fetches the current, ORC-licensed spell list and upserts it into the store, matching
+    /// existing spells by `aonID`. Spells already imported get every field refreshed from AoN;
+    /// spells you created yourself (no matching `aonID`) are never touched. Legacy (pre-remaster
+    /// OGL) spells with no ORC equivalent are skipped — anything already in your library, whether
+    /// from an earlier import or written by hand, is left as-is either way.
+    static func importSpells(context: ModelContext) async throws -> AoNImportResult {
         let sources: [SpellSource] = try await AoNSearchClient.fetchAll(category: "spell", sourceFields: sourceFields)
-        let pairs = AoNSearchClient.resolveKeepersWithLegacy(sources)
+        let keepers = AoNSearchClient.resolveKeepers(sources)
 
         let existing = try context.fetch(FetchDescriptor<Spell>())
         var existingByAonID: [Int: Spell] = [:]
@@ -41,10 +42,14 @@ enum AoNSpellImportService {
             }
         }
 
-        var count = 0
-        for (keeper, legacy) in pairs {
-            let legacyToMerge = includeLegacyDescriptions ? legacy : nil
-            guard let mapped = makeSpell(from: keeper, legacy: legacyToMerge), let aonID = mapped.aonID else { continue }
+        var imported = 0
+        var skipped = 0
+        for keeper in keepers {
+            guard AoNSearchClient.isORC(keeper) else {
+                skipped += 1
+                continue
+            }
+            guard let mapped = makeSpell(from: keeper), let aonID = mapped.aonID else { continue }
             if let match = existingByAonID[aonID] {
                 match.name = mapped.name
                 match.level = mapped.level
@@ -59,14 +64,14 @@ enum AoNSpellImportService {
             } else {
                 context.insert(mapped)
             }
-            count += 1
+            imported += 1
         }
 
         try context.save()
-        return count
+        return AoNImportResult(imported: imported, skipped: skipped)
     }
 
-    private static func makeSpell(from keeper: SpellSource, legacy: SpellSource?) -> Spell? {
+    private static func makeSpell(from keeper: SpellSource) -> Spell? {
         guard let aonID = AoNSearchClient.aonID(from: keeper.url) else { return nil }
 
         let isFocusSpell = keeper.spell_type == "Focus"
@@ -81,12 +86,6 @@ enum AoNSpellImportService {
         } else {
             speed = 4
             details += "\n\n* Special casting time: \(keeper.actions ?? "Unknown")"
-        }
-        if let legacy {
-            let legacyDetails = extractDetails(from: legacy.markdown ?? "")
-            if !legacyDetails.isEmpty {
-                details += "\n\n== LEGACY ==\n\n" + legacyDetails
-            }
         }
 
         return Spell(

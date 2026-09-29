@@ -11,13 +11,21 @@ enum AoNImportError: LocalizedError {
     }
 }
 
-/// The three AoN fields that link a document to its remaster/legacy counterpart. A
-/// pre-remaster document carries `remaster_id` pointing forward to its replacement; the
-/// current document carries `legacy_id` pointing back to what it replaced.
+/// The AoN fields used to tell a document's remaster/ORC status. A pre-remaster document
+/// carries `remaster_id` pointing forward to its replacement; a remastered document carries
+/// a non-empty `legacy_id`. `release_date` is the fallback signal for documents with neither.
 protocol AoNVersionedSource: Decodable {
-    var id: String { get }
     var legacy_id: [String]? { get }
     var remaster_id: [String]? { get }
+    var release_date: String? { get }
+}
+
+/// The outcome of an ORC-filtered AoN import: how many entries were imported/refreshed, and
+/// how many were skipped because they're legacy (pre-remaster OGL) material with no ORC
+/// equivalent. Nothing already in the library is ever touched by this filtering.
+struct AoNImportResult {
+    let imported: Int
+    let skipped: Int
 }
 
 /// Shared plumbing for querying Archive of Nethys's public Elasticsearch search index
@@ -38,7 +46,7 @@ enum AoNSearchClient {
     /// Fetches every document of the given AoN `category` (e.g. "spell", "condition"),
     /// excluding only AoN's own hidden/errata entries. Includes both current and
     /// pre-remaster documents — callers needing just the current ones should pass the
-    /// result through `resolveKeepersWithLegacy`.
+    /// result through `resolveKeepers`.
     static func fetchAll<Source: Decodable>(category: String, sourceFields: [String]) async throws -> [Source] {
         let requestBody: [String: Any] = [
             "from": 0,
@@ -74,16 +82,24 @@ enum AoNSearchClient {
         return Int(urlString[range].dropFirst(3))
     }
 
-    /// Splits a fetched category into "keepers" (documents with no `remaster_id`, i.e. either
-    /// never remastered or the current remastered version) paired with the legacy document
-    /// they supersede, if any — so callers can fold the legacy text into the keeper's record
-    /// instead of creating a second one.
-    static func resolveKeepersWithLegacy<Source: AoNVersionedSource>(_ all: [Source]) -> [(keeper: Source, legacy: Source?)] {
-        let byID = Dictionary(uniqueKeysWithValues: all.map { ($0.id, $0) })
-        let keepers = all.filter { ($0.remaster_id ?? []).isEmpty }
-        return keepers.map { keeper in
-            let legacy = keeper.legacy_id?.first.flatMap { byID[$0] }
-            return (keeper, legacy)
-        }
+    /// Filters a fetched category down to "keepers": documents with no `remaster_id`, i.e.
+    /// either never remastered or the current remastered version. Excludes pre-remaster
+    /// documents that have since been superseded, so they don't show up as duplicates
+    /// alongside their replacement.
+    static func resolveKeepers<Source: AoNVersionedSource>(_ all: [Source]) -> [Source] {
+        all.filter { ($0.remaster_id ?? []).isEmpty }
+    }
+
+    /// Player Core and GM Core's release date — Paizo's switch from the OGL to the ORC license.
+    private static let orcCutoffDate = "2023-11-15"
+
+    /// Whether a keeper document counts as ORC-licensed material. AoN has no explicit license
+    /// field, so this is inferred: a document with a `legacy_id` is itself the remastered
+    /// replacement of an older OGL document, so it's always ORC. Otherwise, its own release
+    /// date decides. An undated document is assumed to be fine to include.
+    static func isORC<Source: AoNVersionedSource>(_ keeper: Source) -> Bool {
+        if let legacyID = keeper.legacy_id, !legacyID.isEmpty { return true }
+        guard let releaseDate = keeper.release_date else { return true }
+        return releaseDate >= orcCutoffDate
     }
 }

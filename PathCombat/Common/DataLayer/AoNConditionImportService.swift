@@ -3,24 +3,25 @@ import SwiftData
 
 /// Imports the Pathfinder 2e condition list from Archive of Nethys's public search index.
 enum AoNConditionImportService {
-    private static let sourceFields = ["name", "markdown", "url", "id", "legacy_id", "remaster_id"]
+    private static let sourceFields = ["name", "markdown", "url", "legacy_id", "remaster_id", "release_date"]
 
     private struct ConditionSource: AoNVersionedSource {
         let name: String
         let markdown: String?
         let url: String?
-        let id: String
         let legacy_id: [String]?
         let remaster_id: [String]?
+        let release_date: String?
     }
 
-    /// Fetches the current condition list and upserts it into the store, matching existing
-    /// conditions by `aonID`. Conditions already imported get every field refreshed from
-    /// AoN; conditions you created yourself (no matching `aonID`) are never touched. Returns
-    /// the number of conditions processed.
-    static func importConditions(context: ModelContext, includeLegacyDescriptions: Bool = false) async throws -> Int {
+    /// Fetches the current, ORC-licensed condition list and upserts it into the store, matching
+    /// existing conditions by `aonID`. Conditions already imported get every field refreshed
+    /// from AoN; conditions you created yourself (no matching `aonID`) are never touched. Legacy
+    /// (pre-remaster OGL) conditions with no ORC equivalent are skipped — anything already in
+    /// your library, whether from an earlier import or written by hand, is left as-is either way.
+    static func importConditions(context: ModelContext) async throws -> AoNImportResult {
         let sources: [ConditionSource] = try await AoNSearchClient.fetchAll(category: "condition", sourceFields: sourceFields)
-        let pairs = AoNSearchClient.resolveKeepersWithLegacy(sources)
+        let keepers = AoNSearchClient.resolveKeepers(sources)
 
         let existing = try context.fetch(FetchDescriptor<Condition>())
         var existingByAonID: [Int: Condition] = [:]
@@ -30,10 +31,14 @@ enum AoNConditionImportService {
             }
         }
 
-        var count = 0
-        for (keeper, legacy) in pairs {
-            let legacyToMerge = includeLegacyDescriptions ? legacy : nil
-            guard let mapped = makeCondition(from: keeper, legacy: legacyToMerge), let aonID = mapped.aonID else { continue }
+        var imported = 0
+        var skipped = 0
+        for keeper in keepers {
+            guard AoNSearchClient.isORC(keeper) else {
+                skipped += 1
+                continue
+            }
+            guard let mapped = makeCondition(from: keeper), let aonID = mapped.aonID else { continue }
             if let match = existingByAonID[aonID] {
                 match.name = mapped.name
                 match.details = mapped.details
@@ -41,23 +46,17 @@ enum AoNConditionImportService {
             } else {
                 context.insert(mapped)
             }
-            count += 1
+            imported += 1
         }
 
         try context.save()
-        return count
+        return AoNImportResult(imported: imported, skipped: skipped)
     }
 
-    private static func makeCondition(from keeper: ConditionSource, legacy: ConditionSource?) -> Condition? {
+    private static func makeCondition(from keeper: ConditionSource) -> Condition? {
         guard let aonID = AoNSearchClient.aonID(from: keeper.url) else { return nil }
 
-        var details = extractDetails(from: keeper.markdown ?? "")
-        if let legacy {
-            let legacyDetails = extractDetails(from: legacy.markdown ?? "")
-            if !legacyDetails.isEmpty {
-                details += "\n\n== LEGACY ==\n\n" + legacyDetails
-            }
-        }
+        let details = extractDetails(from: keeper.markdown ?? "")
 
         return Condition(
             name: keeper.name,

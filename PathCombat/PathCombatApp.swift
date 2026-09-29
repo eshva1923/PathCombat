@@ -44,14 +44,8 @@ struct PathCombatApp: App {
                 Button("Import Data...") {
                     DataBackupCommands.importData(context: sharedModelContainer.mainContext)
                 }
-                Button("Import Spells from Archive of Nethys...") {
-                    DataBackupCommands.importSpellsFromAoN(context: sharedModelContainer.mainContext)
-                }
-                Button("Import Conditions from Archive of Nethys...") {
-                    DataBackupCommands.importConditionsFromAoN(context: sharedModelContainer.mainContext)
-                }
-                Button("Import Actions and Activities from Archive of Nethys...") {
-                    DataBackupCommands.importActionsFromAoN(context: sharedModelContainer.mainContext)
+                Button("Import Data from Archive of Nethys...") {
+                    DataBackupCommands.importDataFromAoN(context: sharedModelContainer.mainContext)
                 }
                 Divider()
                 Menu("Wipe Data") {
@@ -80,6 +74,9 @@ struct PathCombatApp: App {
                 Button("PathCombat Help") {
                     openWindow(id: "help")
                 }
+                Button("Licenses") {
+                    openWindow(id: "licenses")
+                }
             }
         }
 
@@ -87,5 +84,10 @@ struct PathCombatApp: App {
             HelpView()
         }
         .defaultSize(width: 700, height: 520)
+
+        WindowGroup(id: "licenses") {
+            LicensesView()
+        }
+        .defaultSize(width: 480, height: 420)
     }
 }

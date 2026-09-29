@@ -6,6 +6,7 @@ enum HelpSection: String, CaseIterable, Identifiable {
     case entities = "Combat Entities"
     case spells = "Spells"
     case conditions = "Rules and Conditions"
+    case licenses = "Licenses & Attribution"
 
     var id: Self { self }
 
@@ -16,6 +17,7 @@ enum HelpSection: String, CaseIterable, Identifiable {
         case .entities: return "person.3.fill"
         case .spells: return "wand.and.stars"
         case .conditions: return "books.vertical.fill"
+        case .licenses: return "scroll"
         }
     }
 
@@ -31,7 +33,7 @@ enum HelpSection: String, CaseIterable, Identifiable {
 
         Every library follows the same pattern: a sidebar on the left lists items — searchable, and grouped into collapsible sections you expand by clicking the header — while the right side shows the details of whatever is selected. Use the **Add** button in the toolbar to create a new item (in the Rules Library, it's a menu since there are three kinds of item); hover a row and click the trash icon to delete it.
 
-        Spells, conditions, and actions/activities can also be imported in bulk from Archive of Nethys, via the matching **File → Import … from Archive of Nethys…** item for each. Re-running an import refreshes anything you already imported and leaves anything you made by hand alone. The **File** menu also has Export/Import Data for full backups, and a **Wipe Data** submenu for clearing out a section entirely.
+        Spells, conditions, and actions/activities can also be imported in bulk from Archive of Nethys, via **File → Import Data from Archive of Nethys…**. That item is only available once — once any of those three libraries has AoN-imported content, it's blocked, to avoid hammering Archive of Nethys with repeat requests. Wipe the relevant library from **Wipe Data** first if you want a fresh import. The **File** menu also has Export/Import Data for full backups, and a **Wipe Data** submenu for clearing out a section entirely.
         """
         case .encounters: return """
         Encounters live in the Combat Tracker, organized into numbered **Sessions** in the sidebar. Sessions are collapsible — click a session header to expand it.
@@ -68,7 +70,7 @@ enum HelpSection: String, CaseIterable, Identifiable {
 
         Whether a spell counts as a cantrip is decided entirely by tagging it **Cantrip** — add that tag and it's treated as a cantrip everywhere in the app (its own section at the top of the library, its own row in an entity's spellcasting section), regardless of its rank number. There's no separate cantrip toggle.
 
-        You can set an Archive of Nethys ID to link back to a spell's page there, or import the whole spell list at once from **File → Import Spells from Archive of Nethys…**.
+        You can set an Archive of Nethys ID to link back to a spell's page there, or import the whole spell list at once from **File → Import Data from Archive of Nethys…**.
 
         Spells are only editable from this library. Everywhere else — an entity's spellcasting section, the spell picker, tags shown in an encounter — shows them read-only; click a spell tag anywhere to see its full details.
         """
@@ -79,9 +81,45 @@ enum HelpSection: String, CaseIterable, Identifiable {
 
         **Actions and Activities** are single-action, reaction, and free-action rules text (Stride, Seek, Grab an Edge, …) and longer activities (Avoid Notice, downtime activities, …). Choose Action or Activity from the **Add** menu, then set its Name, Cost (or None for activities with no fixed cost), Tags, and Description. Whether something is an Action or an Activity is just a Kind setting — change it any time.
 
-        All three kinds can be bulk-imported from Archive of Nethys: **File → Import Conditions from Archive of Nethys…** and **File → Import Actions and Activities from Archive of Nethys…**.
+        All three kinds are bulk-imported together from **File → Import Data from Archive of Nethys…**.
 
         Like spells, everything in this library is only editable from here — an entity's applied condition tag shows the description on click, but can't rename or redefine the underlying condition.
+        """
+        case .licenses: return """
+        **Open RPG Creative (ORC) License**
+
+        PathCombat includes game rules content made available by Paizo Inc. under the Open RPG Creative (ORC) License.
+
+        The ORC-licensed content used by PathCombat consists of rules-related material such as spells, actions, conditions, traits, and other game rules content made available under the ORC License.
+
+        The use of this content is subject to the terms of the Open RPG Creative (ORC) License.
+
+        For more information about the ORC License, please visit:
+
+        [https://paizo.com/orclicense](https://paizo.com/orclicense)
+
+        **Archives of Nethys**
+
+        PathCombat uses Archives of Nethys as a source for importing ORC-licensed game rules content.
+
+        Archives of Nethys is an independent, community-maintained reference for tabletop roleplaying game rules. Imported content is retrieved from publicly available Archives of Nethys data and stored locally by PathCombat for use within the application.
+
+        Archives of Nethys:
+        [https://2e.aonprd.com/](https://2e.aonprd.com/)
+
+        **Attribution**
+
+        Some game rules content displayed or stored by PathCombat is derived from material originally published by Paizo Inc. and made available under the ORC License.
+
+        PathCombat is not published, endorsed, or specifically approved by Paizo Inc. or Archives of Nethys.
+
+        PathCombat does not include Paizo artwork, logos, or other visual assets.
+
+        All trademarks and copyrights remain the property of their respective owners.
+
+        **About PathCombat**
+
+        PathCombat is an independent tool designed to assist Game Masters during tabletop roleplaying sessions. It is not affiliated with or endorsed by Paizo Inc. or Archives of Nethys.
         """
         }
     }

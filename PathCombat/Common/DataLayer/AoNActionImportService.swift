@@ -5,7 +5,7 @@ import SwiftData
 /// AoN has no separate "activity" category: activities are action documents tagged Exploration
 /// or Downtime; everything else is a plain action.
 enum AoNActionImportService {
-    private static let sourceFields = ["name", "actions", "trait_raw", "markdown", "url", "id", "legacy_id", "remaster_id"]
+    private static let sourceFields = ["name", "actions", "trait_raw", "markdown", "url", "legacy_id", "remaster_id", "release_date"]
     private static let activityTraits: Set<String> = ["Exploration", "Downtime"]
 
     private struct ActionSource: AoNVersionedSource {
@@ -14,22 +14,25 @@ enum AoNActionImportService {
         let trait_raw: [String]?
         let markdown: String?
         let url: String?
-        let id: String
         let legacy_id: [String]?
         let remaster_id: [String]?
+        let release_date: String?
     }
 
     struct ImportCounts {
         let actions: Int
         let activities: Int
+        let skipped: Int
     }
 
-    /// Fetches the current action list and upserts it into the store, matching existing
-    /// entries by `aonID`. Entries already imported get every field refreshed from AoN;
-    /// entries you created yourself (no matching `aonID`) are never touched.
-    static func importActions(context: ModelContext, includeLegacyDescriptions: Bool = false) async throws -> ImportCounts {
+    /// Fetches the current, ORC-licensed action list and upserts it into the store, matching
+    /// existing entries by `aonID`. Entries already imported get every field refreshed from AoN;
+    /// entries you created yourself (no matching `aonID`) are never touched. Legacy (pre-remaster
+    /// OGL) entries with no ORC equivalent are skipped — anything already in your library,
+    /// whether from an earlier import or written by hand, is left as-is either way.
+    static func importActions(context: ModelContext) async throws -> ImportCounts {
         let sources: [ActionSource] = try await AoNSearchClient.fetchAll(category: "action", sourceFields: sourceFields)
-        let pairs = AoNSearchClient.resolveKeepersWithLegacy(sources)
+        let keepers = AoNSearchClient.resolveKeepers(sources)
 
         let existing = try context.fetch(FetchDescriptor<RuleAction>())
         var existingByAonID: [Int: RuleAction] = [:]
@@ -41,9 +44,13 @@ enum AoNActionImportService {
 
         var actionCount = 0
         var activityCount = 0
-        for (keeper, legacy) in pairs {
-            let legacyToMerge = includeLegacyDescriptions ? legacy : nil
-            guard let mapped = makeRuleAction(from: keeper, legacy: legacyToMerge), let aonID = mapped.aonID else { continue }
+        var skipped = 0
+        for keeper in keepers {
+            guard AoNSearchClient.isORC(keeper) else {
+                skipped += 1
+                continue
+            }
+            guard let mapped = makeRuleAction(from: keeper), let aonID = mapped.aonID else { continue }
             if let match = existingByAonID[aonID] {
                 match.name = mapped.name
                 match.kind = mapped.kind
@@ -61,10 +68,10 @@ enum AoNActionImportService {
         }
 
         try context.save()
-        return ImportCounts(actions: actionCount, activities: activityCount)
+        return ImportCounts(actions: actionCount, activities: activityCount, skipped: skipped)
     }
 
-    private static func makeRuleAction(from keeper: ActionSource, legacy: ActionSource?) -> RuleAction? {
+    private static func makeRuleAction(from keeper: ActionSource) -> RuleAction? {
         guard let aonID = AoNSearchClient.aonID(from: keeper.url) else { return nil }
 
         let tags = keeper.trait_raw ?? []
@@ -78,12 +85,6 @@ enum AoNActionImportService {
             } else {
                 speed = 4
                 details += "\n\n* Special cost: \(raw)"
-            }
-        }
-        if let legacy {
-            let legacyDetails = extractDetails(from: legacy.markdown ?? "")
-            if !legacyDetails.isEmpty {
-                details += "\n\n== LEGACY ==\n\n" + legacyDetails
             }
         }
 
