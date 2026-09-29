@@ -89,6 +89,29 @@ enum DataBackupCommands {
         }
     }
 
+    static func importActionsFromAoN(context: ModelContext) {
+        guard let includeLegacyDescriptions = confirmAoNImport(
+            title: "Import Actions and Activities from Archive of Nethys?",
+            message: "Downloads the current Pathfinder 2e action list (about 550 actions and activities) from 2e.aonprd.com and adds them to your Rules Library. Entries already imported from Archive of Nethys are refreshed to match the latest data; entries you created yourself are not affected."
+        ) else { return }
+
+        Task {
+            do {
+                let counts = try await AoNActionImportService.importActions(context: context, includeLegacyDescriptions: includeLegacyDescriptions)
+                await MainActor.run {
+                    let alert = NSAlert()
+                    alert.messageText = "Import Complete"
+                    alert.informativeText = "Imported \(counts.actions) actions and \(counts.activities) activities from Archive of Nethys."
+                    alert.runModal()
+                }
+            } catch {
+                await MainActor.run {
+                    presentError(error, title: "Import Failed")
+                }
+            }
+        }
+    }
+
     /// Shows the shared AoN import confirmation alert with a "merge legacy description" checkbox
     /// (defaulted off). Returns the checkbox state if the user confirmed, or `nil` if cancelled.
     private static func confirmAoNImport(title: String, message: String) -> Bool? {
@@ -140,6 +163,15 @@ enum DataBackupCommands {
             message: "This will permanently delete every spell definition, and remove any entity references to them.",
             context: context) { context in
                 try DataBackupService.wipeSpells(context: context)
+            }
+    }
+
+    static func wipeActions(context: ModelContext) {
+        confirmAndWipe(
+            title: "Wipe all actions and activities?",
+            message: "This will permanently delete every action and activity definition in the Rules Library.",
+            context: context) { context in
+                try DataBackupService.wipeActions(context: context)
             }
     }
 

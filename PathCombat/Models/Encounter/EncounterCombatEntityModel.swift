@@ -11,7 +11,6 @@ final class EncounterCombatEntity: Equatable {
     var hp: Int
     var wounds: Int
     var tags: [String]
-    var currentConditions: [String]
     var affectingConditions: [AppliedCondition]
     var ac: Int
     var fortST: Int
@@ -26,7 +25,7 @@ final class EncounterCombatEntity: Equatable {
     var sourceEntityID: UUID?
 
     init(id: UUID?, name: String, level: Int, iniMod: Int, currentIni: Int, hp: Int, wounds: Int,
-         tags: [String], currentConditions: [String], affectingConditions: [AppliedCondition],
+         tags: [String], affectingConditions: [AppliedCondition],
          ac: Int, fortST: Int, refST: Int, willST: Int, dc: Int, role: CombatRole, actions: [CombatAction],
          spellcasting: Spellcasting? = nil, speed: [Speed] = Speed.defaultLandSpeed, size: CreatureSize = .medium,
          sourceEntityID: UUID? = nil) {
@@ -38,7 +37,6 @@ final class EncounterCombatEntity: Equatable {
         self.hp = hp
         self.wounds = wounds
         self.tags = tags
-        self.currentConditions = currentConditions
         self.affectingConditions = affectingConditions
         self.ac = ac
         self.fortST = fortST

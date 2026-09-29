@@ -1,5 +1,5 @@
 //
-//  ConditionsLibraryView.swift
+//  RulesLibraryView.swift
 //  PathCombat
 //
 //  Created by Federico Brandani on 23/09/2026.
@@ -11,10 +11,12 @@ import SwiftData
 struct RulesLibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var conditions: [Condition]
-    @State private var viewModel = ConditionsLibraryViewModel()
+    @Query private var ruleActions: [RuleAction]
+    @State private var viewModel = RulesLibraryViewModel()
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @State private var selectedConditionID: UUID?
+    @State private var selectedItemID: UUID?
     @State private var searchText = ""
+    @State private var expandedSection: RulesLibrarySection?
 
     private enum Constants {
         static let minSplitViewWidth = 180.0
@@ -26,16 +28,62 @@ struct RulesLibraryView: View {
         viewModel.sortedConditions(conditions.filter { $0.matchesSearch(searchText) })
     }
 
+    private var filteredActions: [RuleAction] {
+        ruleActions.filter { $0.matchesSearch(searchText) }
+    }
+
+    private var actionsOnly: [RuleAction] {
+        viewModel.sortedActions(filteredActions, kind: .action)
+    }
+
+    private var activitiesOnly: [RuleAction] {
+        viewModel.sortedActions(filteredActions, kind: .activity)
+    }
+
+    private var selectedCondition: Condition? {
+        conditions.first(where: { $0.id == selectedItemID })
+    }
+
+    private var selectedAction: RuleAction? {
+        ruleActions.first(where: { $0.id == selectedItemID })
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             VStack(spacing: 0) {
                 searchField
                 Divider()
                 ScrollView(.vertical) {
-                    VStack(spacing: 0) {
-                        ForEach(filteredConditions) { condition in
-                            conditionRow(condition)
-                            Divider()
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        Section {
+                            if !searchText.isEmpty || expandedSection == .conditions {
+                                ForEach(filteredConditions) { condition in
+                                    conditionRow(condition)
+                                    Divider()
+                                }
+                            }
+                        } header: {
+                            sectionHeader(.conditions)
+                        }
+                        Section {
+                            if !searchText.isEmpty || expandedSection == .actions {
+                                ForEach(actionsOnly) { action in
+                                    actionRow(action)
+                                    Divider()
+                                }
+                            }
+                        } header: {
+                            sectionHeader(.actions)
+                        }
+                        Section {
+                            if !searchText.isEmpty || expandedSection == .activities {
+                                ForEach(activitiesOnly) { action in
+                                    actionRow(action)
+                                    Divider()
+                                }
+                            }
+                        } header: {
+                            sectionHeader(.activities)
                         }
                     }
                 }
@@ -47,27 +95,29 @@ struct RulesLibraryView: View {
             )
             .toolbar(removing: .sidebarToggle)
         } detail: {
-            if let selectedConditionID,
-               let condition = conditions.first(where: { $0.id == selectedConditionID }) {
+            if let condition = selectedCondition {
                 conditionDetail(condition)
                     .id(condition.id)
+            } else if let action = selectedAction {
+                RuleActionDetailView(action: action, viewModel: viewModel)
+                    .id(action.id)
             } else {
-                CreateNewItemButton(title: "Create a new condition") {
-                    let newCondition = viewModel.addCondition(using: modelContext)
-                    selectedConditionID = newCondition.id
+                CreateNewItemButton(title: "Create a new \(newItemLabel)") {
+                    addItem(for: expandedSection ?? .conditions)
                 }
             }
         }
         .navigationSplitViewStyle(.prominentDetail)
-        .navigationTitle(viewModel.navigationTitle(selectedID: selectedConditionID, in: conditions))
+        .navigationTitle(viewModel.navigationTitle(selectedID: selectedItemID, conditions: conditions, actions: ruleActions))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    let newCondition = viewModel.addCondition(using: modelContext)
-                    selectedConditionID = newCondition.id
+                Menu {
+                    Button("Condition") { addItem(for: .conditions) }
+                    Button("Action") { addItem(for: .actions) }
+                    Button("Activity") { addItem(for: .activities) }
                 } label: {
                     HStack {
-                        Text("Add a condition")
+                        Text("Add")
                         Icons.add
                     }
                     .padding(.horizontal)
@@ -80,10 +130,36 @@ struct RulesLibraryView: View {
             }
         }
         .onAppear {
-            if selectedConditionID == nil {
-                selectedConditionID = viewModel.sortedConditions(conditions).first?.id
+            if selectedItemID == nil {
+                selectedItemID = filteredConditions.first?.id
+            }
+            if expandedSection == nil {
+                expandedSection = .conditions
             }
         }
+    }
+
+    private var newItemLabel: String {
+        switch expandedSection ?? .conditions {
+        case .conditions: return "condition"
+        case .actions: return "action"
+        case .activities: return "activity"
+        }
+    }
+
+    private func addItem(for section: RulesLibrarySection) {
+        switch section {
+        case .conditions:
+            let newCondition = viewModel.addCondition(using: modelContext)
+            selectedItemID = newCondition.id
+        case .actions:
+            let newAction = viewModel.addAction(kind: .action, using: modelContext)
+            selectedItemID = newAction.id
+        case .activities:
+            let newAction = viewModel.addAction(kind: .activity, using: modelContext)
+            selectedItemID = newAction.id
+        }
+        expandedSection = section
     }
 }
 
@@ -94,19 +170,65 @@ extension RulesLibraryView {
             .padding(.vertical, 8)
     }
 
+    private func sectionHeader(_ section: RulesLibrarySection) -> some View {
+        CollapsibleSectionHeader(
+            isExpanded: expandedSection == section,
+            onToggle: { expandedSection = expandedSection == section ? nil : section }
+        ) {
+            switch section {
+            case .conditions:
+                Text("Conditions")
+                Spacer()
+            case .actions:
+                Text("Actions")
+                Spacer()
+                Icons.action
+                    .foregroundStyle(.secondary)
+            case .activities:
+                Text("Activities")
+                Spacer()
+                Icons.activity
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private func conditionRow(_ condition: Condition) -> some View {
         LibraryRow(
-            isSelected: selectedConditionID == condition.id,
-            onSelect: { selectedConditionID = condition.id },
+            isSelected: selectedItemID == condition.id,
+            onSelect: { selectedItemID = condition.id },
             onDelete: {
                 viewModel.deleteCondition(condition, using: modelContext)
-                if selectedConditionID == condition.id {
-                    selectedConditionID = nil
+                if selectedItemID == condition.id {
+                    selectedItemID = nil
                 }
             }
         ) {
             Text(condition.name)
                 .lineLimit(1)
+        }
+    }
+
+    private func actionRow(_ action: RuleAction) -> some View {
+        LibraryRow(
+            isSelected: selectedItemID == action.id,
+            onSelect: { selectedItemID = action.id },
+            onDelete: {
+                viewModel.deleteAction(action, using: modelContext)
+                if selectedItemID == action.id {
+                    selectedItemID = nil
+                }
+            }
+        ) {
+            HStack {
+                Text(action.name)
+                    .lineLimit(1)
+                Spacer()
+                if let speed = action.speed {
+                    Text(CombatAction.speedSymbol(for: speed))
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 
@@ -143,9 +265,98 @@ extension RulesLibraryView {
     }
 }
 
+private struct RuleActionDetailView: View {
+    @Bindable var action: RuleAction
+    let viewModel: RulesLibraryViewModel
+    @State private var tagsBuffer: String
+
+    let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
+
+    init(action: RuleAction, viewModel: RulesLibraryViewModel) {
+        self.action = action
+        self.viewModel = viewModel
+        self._tagsBuffer = State(initialValue: action.tags.joined(separator: ", "))
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                SelectAllTextField("Action name", text: $action.name)
+                    .font(.title)
+                    .fontDesign(.serif)
+                    .fontWeight(.bold)
+                    .textFieldStyle(.plain)
+                HStack {
+                    Text("Kind")
+                        .fontWeight(.semibold)
+                    Picker("Kind", selection: $action.kind) {
+                        ForEach(RuleActionKind.allCases) { kind in
+                            Text(kind.displayName).tag(kind)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(width: 160)
+                    Text("Cost")
+                        .fontWeight(.semibold)
+                        .padding(.leading)
+                    Picker("Cost", selection: $action.speed) {
+                        Text("None").tag(Int?.none)
+                        ForEach(CombatAction.speedValues, id: \.self) { speed in
+                            Text(CombatAction.displayText(for: speed) + " " + CombatAction.speedSymbol(for: speed)).tag(Int?.some(speed))
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 220)
+                }
+                HStack {
+                    Image(systemName: "tag")
+                    ForEach(action.tags, id: \.self) { tag in
+                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                    }
+                }
+                HStack {
+                    Image(systemName: "tag")
+                    TextField("Tags (comma separated)", text: $tagsBuffer)
+                        .onChange(of: tagsBuffer) { _, newValue in
+                            viewModel.updateTags(on: action, from: newValue)
+                        }
+                }
+                Divider()
+                Text("Description")
+                    .font(.headline)
+                TextEditor(text: $action.details)
+                    .frame(minHeight: 200)
+                Divider()
+                HStack {
+                    Text("Archive of Nethys ID")
+                        .fontWeight(.semibold)
+                    SelectAllTextField("e.g. 88", text: aonIDBinding)
+                        .frame(width: 80)
+                    if let aonURL = action.aonURL {
+                        Link("View on Archive of Nethys", destination: aonURL)
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+
+    private var aonIDBinding: Binding<String> {
+        Binding(
+            get: { action.aonID.map(String.init) ?? "" },
+            set: { newValue in action.aonID = Int(newValue.trimmingCharacters(in: .whitespaces)) }
+        )
+    }
+}
+
 #Preview {
     let container = try! ModelContainer(
-        for: Condition.self,
+        for: Condition.self, RuleAction.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     container.mainContext.insert(Condition(
         name: "Prone",

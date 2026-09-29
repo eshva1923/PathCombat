@@ -3,17 +3,6 @@ import SwiftData
 
 /// Imports the Pathfinder 2e spell list from Archive of Nethys's public search index.
 enum AoNSpellImportService {
-    /// Exact-match action-cost strings that map onto our discrete speed encoding.
-    /// Anything else (durations like "10 minutes", variable costs like "Single Action
-    /// to Three Actions") becomes speed 4 (Special), with the raw text preserved in details.
-    private static let actionSpeedMap: [String: Int] = [
-        "Reaction": -1,
-        "Free Action": 0,
-        "Single Action": 1,
-        "Two Actions": 2,
-        "Three Actions": 3
-    ]
-
     private static let sourceFields = [
         "name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "target", "trait_raw",
         "url", "markdown", "id", "legacy_id", "remaster_id"
@@ -87,7 +76,7 @@ enum AoNSpellImportService {
 
         var details = extractDetails(from: keeper.markdown ?? "")
         let speed: Int
-        if let raw = keeper.actions, let mapped = actionSpeedMap[raw] {
+        if let raw = keeper.actions, let mapped = AoNMarkupCleaner.actionCostMap[raw] {
             speed = mapped
         } else {
             speed = 4

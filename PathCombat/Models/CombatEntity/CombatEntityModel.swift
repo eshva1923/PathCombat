@@ -18,7 +18,6 @@ final class CombatEntity: Equatable {
     var hp: Int
     var wounds: Int
     var tags: [String]
-    var currentConditions: [String]
     var affectingConditions: [AppliedCondition]
     var ac: Int
     var fortST: Int
@@ -33,7 +32,7 @@ final class CombatEntity: Equatable {
 
 
     init(name: String?, id: UUID?, tags: [String]?, level: Int?, iniMod: Int?, currentIni: Int?, hp: Int?, wounds: Int?,
-         currentConditions: [String]?, ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?,
+         ac: Int?, fortST: Int?, refST: Int?, willST: Int?, dc: Int?,
          affectingConditions: [AppliedCondition]? = nil, role: CombatRole? = nil, actions: [CombatAction]? = nil,
          spellcasting: Spellcasting? = nil, speed: [Speed]? = nil, size: CreatureSize? = nil) {
         self.name = name ?? "Unnamed combatent"
@@ -44,7 +43,6 @@ final class CombatEntity: Equatable {
         self.currentIni = currentIni ?? 0
         self.hp = hp ?? 0
         self.wounds = wounds ?? 0
-        self.currentConditions = currentConditions ?? []
         self.affectingConditions = affectingConditions ?? []
         self.ac = ac ?? 10
         self.fortST = fortST ?? 0
@@ -68,7 +66,6 @@ final class CombatEntity: Equatable {
             hp: hp,
             wounds: 0,
             tags: tags,
-            currentConditions: [],
             affectingConditions: [],
             ac: ac,
             fortST: fortST,
@@ -103,7 +100,6 @@ final class CombatEntity: Equatable {
             currentIni: nil,
             hp: nil,
             wounds: nil,
-            currentConditions: nil,
             ac: nil,
             fortST: nil,
             refST: nil,

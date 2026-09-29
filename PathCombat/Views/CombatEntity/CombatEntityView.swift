@@ -615,7 +615,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
         currentIni: nil,
         hp: 200,
         wounds: nil,
-        currentConditions: nil,
         ac: 25,
         fortST: 12,
         refST: 8,

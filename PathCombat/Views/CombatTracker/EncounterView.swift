@@ -309,7 +309,6 @@ extension EncounterView {
                      currentIni: nil,
                      hp: 0,
                      wounds: nil,
-                     currentConditions: nil,
                      ac: 25,
                      fortST: 12,
                      refST: 8,
@@ -328,12 +327,12 @@ extension EncounterView {
 #Preview("Ready / Started") {
     let ready = CombatEntity(
         name: "Ready Guy", id: nil, tags: [], level: 1, iniMod: 5, currentIni: 12,
-        hp: 20, wounds: nil, currentConditions: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15).copyForEncounter()
+        hp: 20, wounds: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15).copyForEncounter()
     let readyEncounter = Encounter(name: "Ready", id: nil, date: nil, completed: nil, combatEntities: [ready])
 
     let started = CombatEntity(
         name: "Started Guy", id: nil, tags: [], level: 1, iniMod: 5, currentIni: 12,
-        hp: 20, wounds: nil, currentConditions: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15).copyForEncounter()
+        hp: 20, wounds: nil, ac: 15, fortST: 5, refST: 5, willST: 5, dc: 15).copyForEncounter()
     let startedEncounter = Encounter(
         name: "Started", id: nil, date: nil, completed: nil, combatEntities: [started],
         currentInitiative: 12, elapsedCombatRounds: 0, actingEntity: started.id)

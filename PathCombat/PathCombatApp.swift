@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct PathCombatApp: App {
+    @Environment(\.openWindow) private var openWindow
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Encounter.self,
@@ -17,6 +19,7 @@ struct PathCombatApp: App {
             CombatEntity.self,
             EncounterCombatEntity.self,
             Spell.self,
+            RuleAction.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -47,6 +50,9 @@ struct PathCombatApp: App {
                 Button("Import Conditions from Archive of Nethys...") {
                     DataBackupCommands.importConditionsFromAoN(context: sharedModelContainer.mainContext)
                 }
+                Button("Import Actions and Activities from Archive of Nethys...") {
+                    DataBackupCommands.importActionsFromAoN(context: sharedModelContainer.mainContext)
+                }
                 Divider()
                 Menu("Wipe Data") {
                     Button("Wipe Encounters") {
@@ -61,12 +67,25 @@ struct PathCombatApp: App {
                     Button("Wipe Spells") {
                         DataBackupCommands.wipeSpells(context: sharedModelContainer.mainContext)
                     }
+                    Button("Wipe Actions and Activities") {
+                        DataBackupCommands.wipeActions(context: sharedModelContainer.mainContext)
+                    }
                     Divider()
                     Button("Wipe All") {
                         DataBackupCommands.wipeAll(context: sharedModelContainer.mainContext)
                     }
                 }
             }
+            CommandGroup(replacing: .help) {
+                Button("PathCombat Help") {
+                    openWindow(id: "help")
+                }
+            }
         }
+
+        WindowGroup(id: "help") {
+            HelpView()
+        }
+        .defaultSize(width: 700, height: 520)
     }
 }

@@ -158,11 +158,11 @@ extension EntitiesLibraryView {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
     container.mainContext.insert(CombatEntity(
         name: "Eaudrick Vallemar", id: nil, tags: ["Human", "Boss"], level: 8, iniMod: 15,
-        currentIni: nil, hp: 200, wounds: nil, currentConditions: nil,
+        currentIni: nil, hp: 200, wounds: nil,
         ac: 25, fortST: 12, refST: 8, willST: 21, dc: 21))
     container.mainContext.insert(CombatEntity(
         name: "Goblin Scout", id: nil, tags: ["Goblin"], level: 1, iniMod: 4,
-        currentIni: nil, hp: 12, wounds: nil, currentConditions: nil,
+        currentIni: nil, hp: 12, wounds: nil,
         ac: 14, fortST: 2, refST: 4, willST: 1, dc: 12))
     return EntitiesLibraryView()
         .modelContainer(container)

@@ -15,15 +15,17 @@ enum DataBackupError: LocalizedError {
 enum DataBackupService {
     private static let conditionsMarker = "#Conditions"
     private static let spellsMarker = "#Spells"
+    private static let actionsMarker = "#Actions"
     private static let entitiesMarker = "#Entities"
     private static let encounterEntitiesMarker = "#EncounterEntities"
     private static let encountersMarker = "#Encounters"
 
     private static let conditionsHeader = ["id", "name", "details", "damage", "isPersistent", "aonID"]
     private static let spellsHeader = ["id", "name", "level", "isFocusSpell", "details", "aonID", "traditions", "speed", "range", "area", "tags", "target"]
+    private static let actionsHeader = ["id", "name", "kind", "speed", "details", "tags", "aonID"]
     private static let entityStatsHeader = [
         "id", "name", "tags", "level", "iniMod", "currentIni", "hp", "wounds",
-        "currentConditions", "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
+        "affectingConditions", "ac", "fortST", "refST", "willST", "dc", "role", "actions", "spellcasting",
         "speed", "size", "sourceEntityID"
     ]
     private static let encountersHeader = [
@@ -36,6 +38,7 @@ enum DataBackupService {
     static func exportCSV(context: ModelContext) throws -> String {
         let conditions = try context.fetch(FetchDescriptor<Condition>())
         let spells = try context.fetch(FetchDescriptor<Spell>())
+        let actions = try context.fetch(FetchDescriptor<RuleAction>())
         let entities = try context.fetch(FetchDescriptor<CombatEntity>())
         let encounterEntities = try context.fetch(FetchDescriptor<EncounterCombatEntity>())
         let encounters = try context.fetch(FetchDescriptor<Encounter>())
@@ -56,6 +59,13 @@ enum DataBackupService {
         lines.append(CSVWriter.row(spellsHeader))
         for spell in spells {
             lines.append(CSVWriter.row(spellRow(for: spell)))
+        }
+        lines.append("")
+
+        lines.append(actionsMarker)
+        lines.append(CSVWriter.row(actionsHeader))
+        for action in actions {
+            lines.append(CSVWriter.row(actionRow(for: action)))
         }
         lines.append("")
 
@@ -113,12 +123,18 @@ enum DataBackupService {
         try context.save()
     }
 
+    static func wipeActions(context: ModelContext) throws {
+        try context.delete(model: RuleAction.self)
+        try context.save()
+    }
+
     static func wipeAll(context: ModelContext) throws {
         try context.delete(model: Encounter.self)
         try context.delete(model: EncounterCombatEntity.self)
         try context.delete(model: CombatEntity.self)
         try context.delete(model: Condition.self)
         try context.delete(model: Spell.self)
+        try context.delete(model: RuleAction.self)
         try context.save()
     }
 
@@ -130,6 +146,7 @@ enum DataBackupService {
         try context.delete(model: CombatEntity.self)
         try context.delete(model: Condition.self)
         try context.delete(model: Spell.self)
+        try context.delete(model: RuleAction.self)
 
         for row in sections[conditionsMarker] ?? [] {
             guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
@@ -142,6 +159,11 @@ enum DataBackupService {
         for row in sections[spellsMarker] ?? [] {
             guard let spell = parseSpell(from: row) else { continue }
             context.insert(spell)
+        }
+
+        for row in sections[actionsMarker] ?? [] {
+            guard let action = parseAction(from: row) else { continue }
+            context.insert(action)
         }
 
         for row in sections[entitiesMarker] ?? [] {
@@ -185,7 +207,6 @@ enum DataBackupService {
             String(entity.currentIni),
             String(entity.hp),
             String(entity.wounds),
-            entity.currentConditions.joined(separator: ";"),
             encode(entity.affectingConditions),
             String(entity.ac),
             String(entity.fortST),
@@ -202,7 +223,7 @@ enum DataBackupService {
     }
 
     private static func parseCombatEntity(from row: [String]) -> CombatEntity? {
-        guard row.count >= 15, let id = UUID(uuidString: row[0]) else { return nil }
+        guard row.count >= 14, let id = UUID(uuidString: row[0]) else { return nil }
         return CombatEntity(
             name: row[1],
             id: id,
@@ -212,22 +233,21 @@ enum DataBackupService {
             currentIni: Int(row[5]),
             hp: Int(row[6]),
             wounds: Int(row[7]),
-            currentConditions: splitList(row[8]),
-            ac: Int(row[10]),
-            fortST: Int(row[11]),
-            refST: Int(row[12]),
-            willST: Int(row[13]),
-            dc: Int(row[14]),
-            affectingConditions: decodeAppliedConditions(row[9]),
-            role: row.count >= 16 ? CombatRole(rawValue: row[15]) : nil,
-            actions: row.count >= 17 ? decodeActions(row[16]) : nil,
-            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil,
-            speed: row.count >= 19 ? decodeSpeed(row[18]) : nil,
-            size: row.count >= 20 ? CreatureSize(rawValue: row[19]) : nil)
+            ac: Int(row[9]),
+            fortST: Int(row[10]),
+            refST: Int(row[11]),
+            willST: Int(row[12]),
+            dc: Int(row[13]),
+            affectingConditions: decodeAppliedConditions(row[8]),
+            role: row.count >= 15 ? CombatRole(rawValue: row[14]) : nil,
+            actions: row.count >= 16 ? decodeActions(row[15]) : nil,
+            spellcasting: row.count >= 17 ? decodeSpellcasting(row[16]) : nil,
+            speed: row.count >= 18 ? decodeSpeed(row[17]) : nil,
+            size: row.count >= 19 ? CreatureSize(rawValue: row[18]) : nil)
     }
 
     private static func parseEncounterCombatEntity(from row: [String]) -> EncounterCombatEntity? {
-        guard row.count >= 15, let id = UUID(uuidString: row[0]) else { return nil }
+        guard row.count >= 14, let id = UUID(uuidString: row[0]) else { return nil }
         return EncounterCombatEntity(
             id: id,
             name: row[1],
@@ -237,19 +257,18 @@ enum DataBackupService {
             hp: Int(row[6]) ?? 0,
             wounds: Int(row[7]) ?? 0,
             tags: splitList(row[2]),
-            currentConditions: splitList(row[8]),
-            affectingConditions: decodeAppliedConditions(row[9]),
-            ac: Int(row[10]) ?? 10,
-            fortST: Int(row[11]) ?? 0,
-            refST: Int(row[12]) ?? 0,
-            willST: Int(row[13]) ?? 0,
-            dc: Int(row[14]) ?? 10,
-            role: row.count >= 16 ? (CombatRole(rawValue: row[15]) ?? .attacker) : .attacker,
-            actions: row.count >= 17 ? decodeActions(row[16]) : [],
-            spellcasting: row.count >= 18 ? decodeSpellcasting(row[17]) : nil,
-            speed: row.count >= 19 ? decodeSpeed(row[18]) : Speed.defaultLandSpeed,
-            size: row.count >= 20 ? (CreatureSize(rawValue: row[19]) ?? .medium) : .medium,
-            sourceEntityID: row.count >= 21 ? UUID(uuidString: row[20]) : nil)
+            affectingConditions: decodeAppliedConditions(row[8]),
+            ac: Int(row[9]) ?? 10,
+            fortST: Int(row[10]) ?? 0,
+            refST: Int(row[11]) ?? 0,
+            willST: Int(row[12]) ?? 0,
+            dc: Int(row[13]) ?? 10,
+            role: row.count >= 15 ? (CombatRole(rawValue: row[14]) ?? .attacker) : .attacker,
+            actions: row.count >= 16 ? decodeActions(row[15]) : [],
+            spellcasting: row.count >= 17 ? decodeSpellcasting(row[16]) : nil,
+            speed: row.count >= 18 ? decodeSpeed(row[17]) : Speed.defaultLandSpeed,
+            size: row.count >= 19 ? (CreatureSize(rawValue: row[18]) ?? .medium) : .medium,
+            sourceEntityID: row.count >= 20 ? UUID(uuidString: row[19]) : nil)
     }
 
     private static func spellRow(for spell: Spell) -> [String] {
@@ -286,6 +305,33 @@ enum DataBackupService {
             area: row.count >= 10 ? row[9] : nil,
             target: row.count >= 12 ? row[11] : nil,
             tags: row.count >= 11 ? splitList(row[10]) : nil)
+    }
+
+    private static func actionRow(for action: RuleAction) -> [String] {
+        [
+            action.id.uuidString,
+            action.name,
+            action.kind.rawValue,
+            action.speed.map(String.init) ?? "",
+            action.details,
+            action.tags.joined(separator: ";"),
+            action.aonID.map(String.init) ?? ""
+        ]
+    }
+
+    private static func parseAction(from row: [String]) -> RuleAction? {
+        guard row.count >= 5, let id = UUID(uuidString: row[0]) else { return nil }
+        let speed = row[3].isEmpty ? nil : Int(row[3])
+        let tags = row.count >= 6 ? splitList(row[5]) : []
+        let aonID = row.count >= 7 && !row[6].isEmpty ? Int(row[6]) : nil
+        return RuleAction(
+            name: row[1],
+            id: id,
+            kind: RuleActionKind(rawValue: row[2]),
+            speed: speed,
+            details: row[4],
+            tags: tags,
+            aonID: aonID)
     }
 
     private static func splitList(_ value: String) -> [String] {
@@ -334,7 +380,7 @@ enum DataBackupService {
 
     private static func parseSections(_ text: String) throws -> [String: [[String]]] {
         let requiredMarkers = [conditionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
-        let allMarkers = requiredMarkers + [spellsMarker]
+        let allMarkers = requiredMarkers + [spellsMarker, actionsMarker]
         let rows = CSVParser.parseRows(text)
 
         var sections: [String: [[String]]] = [:]

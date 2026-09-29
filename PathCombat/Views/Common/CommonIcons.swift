@@ -29,6 +29,8 @@ struct Icons {
     static let speed = Image(systemName: "hare.fill")
     static let size = Image(systemName: "ruler.fill")
     static let focusSpell = Image(systemName: "f.circle")
+    static let action = Image(systemName: "bolt.fill")
+    static let activity = Image(systemName: "hourglass")
 
     static func spellRank(_ level: Int, filled: Bool? = false) -> Image {
         let filledValue = filled == true ? ".fill" : ""
