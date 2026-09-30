@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 
 struct EntityPickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
     @Query private var libraryEntities: [CombatEntity]
     let isAddable: (CombatEntity) -> Bool
     let countInEncounter: (CombatEntity) -> Int
@@ -30,48 +29,21 @@ struct EntityPickerSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text("Load Entity")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding()
-            SearchField(text: $searchText)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-            Divider()
-            if availableEntities.isEmpty {
-                Spacer()
-                Text(searchText.isEmpty ? "No entities available in the library" : "No entities match \"\(searchText)\"")
-                    .foregroundStyle(.secondary)
-                Spacer()
-            } else {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(availableEntities) { entity in
-                            entityRow(entity)
-                            Divider()
-                        }
-                    }
+        PickerSheet(
+            title: "Load Entity",
+            items: availableEntities,
+            noun: "entities",
+            searchText: $searchText,
+            addButtonTitle: "Add to Encounter",
+            isAddDisabled: selectedEntity.map { !isAddable($0) } ?? true,
+            onAdd: {
+                if let selectedEntity {
+                    onAdd(selectedEntity)
                 }
-            }
-            Divider()
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-                Spacer()
-                Button("Add to Encounter") {
-                    if let selectedEntity {
-                        onAdd(selectedEntity)
-                    }
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(selectedEntity.map { !isAddable($0) } ?? true)
-            }
-            .padding()
-        }
-        .frame(minWidth: 440, minHeight: 380)
+            },
+            row: { entity in entityRow(entity) },
+            footer: { EmptyView() }
+        )
     }
 
     private func entityRow(_ entity: CombatEntity) -> some View {
@@ -85,14 +57,14 @@ struct EntityPickerSheet: View {
                     Text(entity.name)
                         .fontWeight(.semibold)
                     if entity.role != .pc && entity.role != .boss {
-                        LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary.opacity(0.25), imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(text: "In encounter: \(countInEncounter(entity))", color: .secondary.opacity(0.25))
                     }
                     Spacer()
-                    LabelTag(text: "Level \(entity.level)", color: .brown, imageName: nil, hoverEffect: false, hoverColor: nil)
+                    LabelTag(text: "Level \(entity.level)", color: .brown)
                 }
                 HStack {
                     ForEach(entity.tags, id: \.self) { tag in
-                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                        LabelTag(text: tag, color: .accentColor)
                     }
                 }
             }

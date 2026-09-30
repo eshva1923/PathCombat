@@ -184,10 +184,7 @@ final class CombatEntityViewModel<Entity: CombatEntityStats> {
 
     func knownSpells(rank: Int, allSpells: [Spell]) -> [Spell] {
         guard let ids = combatEntity.spellcasting?.knownSpellIDs else { return [] }
-        return allSpells.filter { spell in
-            guard ids.contains(spell.id) else { return false }
-            return rank == 0 ? spell.isCantrip : (spell.level == rank && !spell.isCantrip)
-        }
+        return allSpells.filter { ids.contains($0.id) && $0.matchesRank(rank) }
     }
 
     func focusSpells(allSpells: [Spell]) -> [Spell] {

@@ -2,7 +2,6 @@ import SwiftUI
 import SwiftData
 
 struct SpellPickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
     @Query private var librarySpells: [Spell]
     let isFocusSpell: Bool
     var level: Int? = nil
@@ -15,7 +14,7 @@ struct SpellPickerSheet: View {
     private var availableSpells: [Spell] {
         librarySpells
             .filter { $0.isFocusSpell == isFocusSpell && !excludedSpellIDs.contains($0.id) }
-            .filter { level == nil || (level == 0 ? $0.isCantrip : ($0.level == level && !$0.isCantrip)) }
+            .filter { level == nil || $0.matchesRank(level ?? 0) }
             .filter { $0.matchesSearch(searchText) }
             .sorted { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
     }
@@ -27,49 +26,20 @@ struct SpellPickerSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text(title)
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding()
-            SearchField(text: $searchText)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-            Divider()
-            if availableSpells.isEmpty {
-                Spacer()
-                Text(searchText.isEmpty ? "No spells available in the library" : "No spells match \"\(searchText)\"")
-                    .foregroundStyle(.secondary)
-                Spacer()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(availableSpells) { spell in
-                            spellRow(spell)
-                            Divider()
-                        }
-                    }
+        PickerSheet(
+            title: title,
+            items: availableSpells,
+            noun: "spells",
+            searchText: $searchText,
+            isAddDisabled: selectedSpellID == nil,
+            onAdd: {
+                if let selectedSpellID, let spell = availableSpells.first(where: { $0.id == selectedSpellID }) {
+                    onAdd(spell)
                 }
-            }
-            Divider()
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                }
-                Spacer()
-                Button("Add") {
-                    if let selectedSpellID,
-                       let spell = availableSpells.first(where: { $0.id == selectedSpellID }) {
-                        onAdd(spell)
-                    }
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(selectedSpellID == nil)
-            }
-            .padding()
-        }
-        .frame(minWidth: 440, minHeight: 380)
+            },
+            row: { spell in spellRow(spell) },
+            footer: { EmptyView() }
+        )
     }
 
     private func spellRow(_ spell: Spell) -> some View {
@@ -79,7 +49,7 @@ struct SpellPickerSheet: View {
                     .fontWeight(.semibold)
                 Spacer()
                 ForEach(spell.traditions) { tradition in
-                    LabelTag(text: tradition.rawValue, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                    LabelTag(text: tradition.rawValue, color: .accentColor)
                 }
                 if level == nil {
                     Icons.spellRank(spell.level)

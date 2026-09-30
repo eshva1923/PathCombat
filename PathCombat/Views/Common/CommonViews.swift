@@ -114,6 +114,70 @@ struct LibraryRow<Content: View>: View {
     }
 }
 
+/// The "Archive of Nethys ID" field + "View on Archive of Nethys" link shown on every library
+/// detail view that's importable from AoN (spells, actions). Owns the Int?<->String text
+/// conversion so callers just bind straight to the model's `aonID`.
+struct AoNIDField: View {
+    @Binding var aonID: Int?
+    var placeholder: String = ""
+    let url: URL?
+
+    private var textBinding: Binding<String> {
+        Binding(
+            get: { aonID.map(String.init) ?? "" },
+            set: { newValue in aonID = Int(newValue.trimmingCharacters(in: .whitespaces)) }
+        )
+    }
+
+    var body: some View {
+        HStack {
+            Text("Archive of Nethys ID")
+                .fontWeight(.semibold)
+            SelectAllTextField(placeholder, text: textBinding)
+                .frame(width: 80)
+            if let url {
+                Link("View on Archive of Nethys", destination: url)
+            }
+        }
+    }
+}
+
+/// The tags row shown wherever an item's tags appear: a buffered comma-separated edit field
+/// while editing it in its own library (`isEditable: true`, the default), or a read-only row of
+/// chips everywhere else the item is shown. Owns its own buffer, seeded from `tags` and
+/// reported back via `onChange`.
+struct TagsEditor: View {
+    let tags: [String]
+    var isEditable: Bool = true
+    var onChange: ((String) -> Void)? = nil
+
+    @State private var buffer: String
+
+    init(tags: [String], isEditable: Bool = true, onChange: ((String) -> Void)? = nil) {
+        self.tags = tags
+        self.isEditable = isEditable
+        self.onChange = onChange
+        self._buffer = State(initialValue: tags.joined(separator: ", "))
+    }
+
+    var body: some View {
+        if isEditable {
+            HStack {
+                Image(systemName: "tag")
+                TextField("Tags (comma separated)", text: $buffer)
+                    .onChange(of: buffer) { _, newValue in onChange?(newValue) }
+            }
+        } else {
+            HStack {
+                Image(systemName: "tag")
+                ForEach(tags, id: \.self) { tag in
+                    LabelTag(text: tag, color: .accentColor)
+                }
+            }
+        }
+    }
+}
+
 /// The "create a new X" placeholder shown in a detail pane when nothing is selected.
 struct CreateNewItemButton: View {
     let title: String
@@ -134,9 +198,9 @@ struct CreateNewItemButton: View {
 struct LabelTag: View {
     let text: String
     let color: Color
-    let imageName: String?
-    let hoverEffect: Bool
-    let hoverColor: Color?
+    var imageName: String? = nil
+    var hoverEffect: Bool = false
+    var hoverColor: Color? = nil
 
     @State var backgroundColor = Color.clear
     
@@ -285,9 +349,12 @@ struct SpellTag: View {
                     if !spell.traditions.isEmpty {
                         HStack {
                             ForEach(spell.traditions) { tradition in
-                                LabelTag(text: tradition.rawValue, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                                LabelTag(text: tradition.rawValue, color: .accentColor)
                             }
                         }
+                    }
+                    if !spell.tags.isEmpty {
+                        TagsEditor(tags: spell.tags, isEditable: false)
                     }
                     Divider()
                     ScrollView {
@@ -336,17 +403,11 @@ struct LabelStat: View {
 
     @State var backgroundColor = Color.clear
 
-    static let formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter
-    }()
-
     var body: some View {
         Label {
             HStack {
                 if isEditable {
-                    SelectAllIntField(value: $value, formatter: Self.formatter)
+                    SelectAllIntField(value: $value)
                         .font(.title3)
                         .fontWeight(.bold)
                         .frame(width: 40)

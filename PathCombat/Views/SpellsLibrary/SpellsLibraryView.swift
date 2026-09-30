@@ -5,59 +5,34 @@ struct SpellsLibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var spells: [Spell]
     @State private var viewModel = SpellsLibraryViewModel()
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedSpellID: UUID?
     @State private var searchText = ""
     @State private var expandedSection: SpellLibrarySection?
-
-    let formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter
-    }()
-
-    private enum Constants {
-        static let minSplitViewWidth = 180.0
-        static let idealSplitViewWidth = 200.0
-        static let maxSplitViewWidth = 220.0
-    }
 
     private var groupedSpells: [(section: SpellLibrarySection, spells: [Spell])] {
         viewModel.groupedSpells(spells.filter { $0.matchesSearch(searchText) })
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            VStack(spacing: 0) {
-                searchField
-                Divider()
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        ForEach(groupedSpells, id: \.section) { group in
-                            Section {
-                                if !searchText.isEmpty || expandedSection == group.section {
-                                    ForEach(group.spells) { spell in
-                                        spellRow(spell)
-                                        Divider()
-                                    }
-                                }
-                            } header: {
-                                sectionHeader(group.section)
+        LibrarySplitView(searchText: $searchText) {
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                ForEach(groupedSpells, id: \.section) { group in
+                    Section {
+                        if !searchText.isEmpty || expandedSection == group.section {
+                            ForEach(group.spells) { spell in
+                                spellRow(spell)
+                                Divider()
                             }
                         }
+                    } header: {
+                        sectionHeader(group.section)
                     }
                 }
             }
-            .navigationSplitViewColumnWidth(
-                min: Constants.minSplitViewWidth,
-                ideal: Constants.idealSplitViewWidth,
-                max: Constants.maxSplitViewWidth
-            )
-            .toolbar(removing: .sidebarToggle)
         } detail: {
             if let selectedSpellID,
                let spell = spells.first(where: { $0.id == selectedSpellID }) {
-                SpellDetailView(spell: spell, allSpells: spells, viewModel: viewModel, formatter: formatter)
+                SpellDetailView(spell: spell, allSpells: spells, viewModel: viewModel)
                     .id(spell.id)
             } else {
                 CreateNewItemButton(title: "Create a new spell") {
@@ -66,7 +41,6 @@ struct SpellsLibraryView: View {
                 }
             }
         }
-        .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedSpellID, in: spells))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -81,11 +55,6 @@ struct SpellsLibraryView: View {
                     }
                     .padding(.horizontal)
                 }
-            }
-        }
-        .onChange(of: columnVisibility) { _, newValue in
-            if newValue != .all {
-                columnVisibility = .all
             }
         }
         .onAppear {
@@ -106,12 +75,6 @@ struct SpellsLibraryView: View {
 }
 
 extension SpellsLibraryView {
-    private var searchField: some View {
-        SearchField(text: $searchText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-    }
-
     private func sectionHeader(_ section: SpellLibrarySection) -> some View {
         CollapsibleSectionHeader(
             isExpanded: expandedSection == section,
@@ -165,16 +128,6 @@ private struct SpellDetailView: View {
     @Bindable var spell: Spell
     let allSpells: [Spell]
     let viewModel: SpellsLibraryViewModel
-    let formatter: NumberFormatter
-    @State private var tagsBuffer: String
-
-    init(spell: Spell, allSpells: [Spell], viewModel: SpellsLibraryViewModel, formatter: NumberFormatter) {
-        self.spell = spell
-        self.allSpells = allSpells
-        self.viewModel = viewModel
-        self.formatter = formatter
-        self._tagsBuffer = State(initialValue: spell.tags.joined(separator: ", "))
-    }
 
     var body: some View {
         ScrollView {
@@ -192,7 +145,7 @@ private struct SpellDetailView: View {
                 HStack {
                     Text("Level")
                         .fontWeight(.semibold)
-                    SelectAllIntField(value: $spell.level, formatter: formatter)
+                    SelectAllIntField(value: $spell.level)
                         .frame(width: 40)
                     Toggle("Focus Spell", isOn: $spell.isFocusSpell)
                         .padding(.leading)
@@ -226,34 +179,14 @@ private struct SpellDetailView: View {
                         traditionToggle(tradition)
                     }
                 }
-                HStack {
-                    Image(systemName: "tag")
-                    ForEach(spell.tags, id: \.self) { tag in
-                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
-                    }
-                }
-                HStack {
-                    Image(systemName: "tag")
-                    TextField("Tags (comma separated)", text: $tagsBuffer)
-                        .onChange(of: tagsBuffer) { _, newValue in
-                            viewModel.updateTags(on: spell, from: newValue)
-                        }
-                }
+                TagsEditor(tags: spell.tags) { viewModel.updateTags(on: spell, from: $0) }
                 Divider()
                 Text("Description")
                     .font(.headline)
                 TextEditor(text: $spell.details)
                     .frame(minHeight: 200)
                 Divider()
-                HStack {
-                    Text("Archive of Nethys ID")
-                        .fontWeight(.semibold)
-                    SelectAllTextField("e.g. 1261", text: aonIDBinding)
-                        .frame(width: 80)
-                    if let aonURL = spell.aonURL {
-                        Link("View on Archive of Nethys", destination: aonURL)
-                    }
-                }
+                AoNIDField(aonID: $spell.aonID, placeholder: "e.g. 1261", url: spell.aonURL)
                 if let warning = viewModel.duplicateAonIDWarning(for: spell, in: allSpells) {
                     Text(warning)
                         .font(.caption)
@@ -262,13 +195,6 @@ private struct SpellDetailView: View {
             }
             .padding()
         }
-    }
-
-    private var aonIDBinding: Binding<String> {
-        Binding(
-            get: { spell.aonID.map(String.init) ?? "" },
-            set: { newValue in spell.aonID = Int(newValue.trimmingCharacters(in: .whitespaces)) }
-        )
     }
 
     private func traditionToggle(_ tradition: SpellTradition) -> some View {

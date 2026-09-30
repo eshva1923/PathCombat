@@ -1,6 +1,15 @@
 import SwiftUI
 import AppKit
 
+extension NumberFormatter {
+    /// The plain decimal formatter shared by every `SelectAllIntField`/`LabelStat` in the app.
+    static let decimal: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
+}
+
 private final class FocusSelectingTextField: NSTextField {
     private var selectAllOnNextMouseDown = false
 
@@ -88,7 +97,7 @@ private struct SelectAllTextFieldRepresentable: NSViewRepresentable {
 
 struct SelectAllIntField: View {
     @Binding var value: Int
-    let formatter: NumberFormatter
+    var formatter: NumberFormatter = .decimal
 
     var body: some View {
         SelectAllIntFieldRepresentable(value: $value, formatter: formatter)

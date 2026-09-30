@@ -23,12 +23,6 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     let isTemplate: Bool
     let isCollapsed: Bool
 
-    let formatter: NumberFormatter = {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            return formatter
-    }()
-
     init(combatEntity: Entity, isTemplate: Bool = false, isCollapsed: Bool = false) {
         self.combatEntity = combatEntity
         self.isTemplate = isTemplate
@@ -69,7 +63,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 } else {
                     HStack{
                         ForEach (combatEntity.tags, id: \.self) {tag in
-                            LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                            LabelTag(text: tag, color: .accentColor)
                         }
                     }
                 }
@@ -97,7 +91,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
     var levelTag: some View {
         HStack(spacing: 4) {
             Text("Level")
-            SelectAllIntField(value: $combatEntity.level, formatter: formatter)
+            SelectAllIntField(value: $combatEntity.level)
                 .frame(width: 30)
         }
         .padding(3)
@@ -141,7 +135,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     }
             } else {
                 ForEach(combatEntity.speed, id: \.self) { speed in
-                    LabelTag(text: speed.displayText, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
+                    LabelTag(text: speed.displayText, color: .accentColor)
                 }
             }
         }
@@ -172,14 +166,14 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                 Icons.hp
                 Text("HP")
                     .fontWeight(.bold)
-                SelectAllIntField(value: $combatEntity.hp, formatter: formatter)
+                SelectAllIntField(value: $combatEntity.hp)
                     .fontWeight(.bold)
                 if !isTemplate {
                     Spacer()
                     Icons.wounds
                     Text("Wounds")
                         .fontWeight(.medium)
-                    SelectAllIntField(value: $combatEntity.wounds, formatter: formatter)
+                    SelectAllIntField(value: $combatEntity.wounds)
                         .fontWeight(.medium)
                 }
             }
@@ -193,7 +187,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
             Icons.initiative
             Text("Initiative")
                 .fontWeight(.bold)
-            SelectAllIntField(value: $combatEntity.currentIni, formatter: formatter)
+            SelectAllIntField(value: $combatEntity.currentIni)
                 .fontWeight(.bold)
             Button {
                 viewModel.rollInitiative()
@@ -321,7 +315,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     }
                     .labelsHidden()
                     Text("To Hit")
-                    SelectAllIntField(value: binding.toHit, formatter: formatter)
+                    SelectAllIntField(value: binding.toHit)
                         .frame(width: 40)
                     SelectAllTextField("Damage (e.g. 2d6+4)", text: binding.damage)
                 } else {
@@ -454,7 +448,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     .frame(width: 30, alignment: .leading)
                 if rank > 0 {
                     Text("Slots")
-                    SelectAllIntField(value: availableSlotsBinding(rank: rank), formatter: formatter)
+                    SelectAllIntField(value: availableSlotsBinding(rank: rank))
                         .frame(width: 30)
                 }
                 spellTags(spellsForRank, onRemove: { viewModel.removeSpell($0) })
@@ -464,8 +458,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                         isShowingSpellPicker = true
                     } label: {
                         Icons.add
-                    }
-                    .buttonStyle(.plain)
+                    }.padding(.leading, 4)
                 }
             }
         } else if viewModel.availableSlots(rank: rank) > 0 || !spellsForRank.isEmpty {

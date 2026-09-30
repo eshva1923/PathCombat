@@ -12,16 +12,9 @@ struct EntitiesLibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var entities: [CombatEntity]
     @State private var viewModel = EntitiesLibraryViewModel()
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedEntityID: UUID?
     @State private var searchText = ""
     @State private var expandedRole: CombatRole?
-
-    private enum Constants {
-        static let minSplitViewWidth = 180.0
-        static let idealSplitViewWidth = 200.0
-        static let maxSplitViewWidth = 220.0
-    }
 
     private var filteredEntities: [CombatEntity] {
         entities.filter { $0.matchesSearch(searchText) }
@@ -32,33 +25,21 @@ struct EntitiesLibraryView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            VStack(spacing: 0) {
-                searchField
-                Divider()
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        ForEach(groupedEntities, id: \.role) { group in
-                            Section {
-                                if !searchText.isEmpty || expandedRole == group.role {
-                                    ForEach(group.entities) { entity in
-                                        entityRow(entity)
-                                        Divider()
-                                    }
-                                }
-                            } header: {
-                                roleHeader(group.role)
+        LibrarySplitView(searchText: $searchText) {
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                ForEach(groupedEntities, id: \.role) { group in
+                    Section {
+                        if !searchText.isEmpty || expandedRole == group.role {
+                            ForEach(group.entities) { entity in
+                                entityRow(entity)
+                                Divider()
                             }
                         }
+                    } header: {
+                        roleHeader(group.role)
                     }
                 }
             }
-            .navigationSplitViewColumnWidth(
-                min: Constants.minSplitViewWidth,
-                ideal: Constants.idealSplitViewWidth,
-                max: Constants.maxSplitViewWidth
-            )
-            .toolbar(removing: .sidebarToggle)
         } detail: {
             if let selectedEntityID,
                let entity = entities.first(where: { $0.id == selectedEntityID }) {
@@ -74,7 +55,6 @@ struct EntitiesLibraryView: View {
                 }
             }
         }
-        .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedEntityID, in: entities))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -91,11 +71,6 @@ struct EntitiesLibraryView: View {
                 }
             }
         }
-        .onChange(of: columnVisibility) { _, newValue in
-            if newValue != .all {
-                columnVisibility = .all
-            }
-        }
         .onAppear {
             if selectedEntityID == nil {
                 selectedEntityID = groupedEntities.first?.entities.first?.id
@@ -109,12 +84,6 @@ struct EntitiesLibraryView: View {
 }
 
 extension EntitiesLibraryView {
-    private var searchField: some View {
-        SearchField(text: $searchText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-    }
-
     private func roleHeader(_ role: CombatRole) -> some View {
         CollapsibleSectionHeader(
             isExpanded: expandedRole == role,

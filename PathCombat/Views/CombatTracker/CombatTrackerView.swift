@@ -12,16 +12,9 @@ struct CombatTrackerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var encounters: [Encounter]
     @State private var viewModel = CombatTrackerViewModel()
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedEncounterID: UUID?
     @State private var searchText = ""
     @State private var expandedSession: Int?
-
-    private enum Constants {
-        static let minSplitViewWidth = 180.0
-        static let idealSplitViewWidth = 200.0
-        static let maxSplitViewWidth = 220.0
-    }
 
     private var filteredEncounters: [Encounter] {
         encounters.filter { $0.matchesSearch(searchText) }
@@ -32,33 +25,21 @@ struct CombatTrackerView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            VStack(spacing: 0) {
-                searchField
-                Divider()
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        ForEach(groupedEncounters, id: \.session) { group in
-                            Section {
-                                if !searchText.isEmpty || expandedSession == group.session {
-                                    ForEach(group.encounters) { encounter in
-                                        encounterRow(encounter)
-                                        Divider()
-                                    }
-                                }
-                            } header: {
-                                sessionHeader(group.session)
+        LibrarySplitView(searchText: $searchText) {
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                ForEach(groupedEncounters, id: \.session) { group in
+                    Section {
+                        if !searchText.isEmpty || expandedSession == group.session {
+                            ForEach(group.encounters) { encounter in
+                                encounterRow(encounter)
+                                Divider()
                             }
                         }
+                    } header: {
+                        sessionHeader(group.session)
                     }
                 }
             }
-            .navigationSplitViewColumnWidth(
-                min: Constants.minSplitViewWidth,
-                ideal: Constants.idealSplitViewWidth,
-                max: Constants.maxSplitViewWidth
-            )
-            .toolbar(removing: .sidebarToggle)
         } detail: {
             if let selectedEncounterID,
                let encounter = encounters.first(where: { $0.id == selectedEncounterID }) {
@@ -72,7 +53,6 @@ struct CombatTrackerView: View {
                 .padding()
             }
         }
-        .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedEncounterID, in: encounters))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -89,11 +69,6 @@ struct CombatTrackerView: View {
                 }
             }
         }
-        .onChange(of: columnVisibility) { _, newValue in
-            if newValue != .all {
-                columnVisibility = .all
-            }
-        }
         .onAppear {
             if selectedEncounterID == nil {
                 selectedEncounterID = groupedEncounters.first?.encounters.first?.id
@@ -107,12 +82,6 @@ struct CombatTrackerView: View {
 }
 
 extension CombatTrackerView {
-    private var searchField: some View {
-        SearchField(text: $searchText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-    }
-
     private func sessionHeader(_ session: Int) -> some View {
         CollapsibleSectionHeader(
             isExpanded: expandedSession == session,

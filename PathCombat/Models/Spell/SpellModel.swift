@@ -46,6 +46,12 @@ final class Spell {
         tags.contains { $0.caseInsensitiveCompare("Cantrip") == .orderedSame }
     }
 
+    /// Whether this spell belongs in rank `rank`'s row/section: rank 0 means cantrips
+    /// (regardless of their real rank), everything else means an exact, non-cantrip match.
+    func matchesRank(_ rank: Int) -> Bool {
+        rank == 0 ? isCantrip : (level == rank && !isCantrip)
+    }
+
     func matchesSearch(_ query: String) -> Bool {
         guard !query.isEmpty else { return true }
         let lowered = query.lowercased()

@@ -12,12 +12,6 @@ struct EncounterView: View {
     @State private var isConfirmingReset = false
     @State private var entityPendingRemoval: EncounterCombatEntity?
 
-    let formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter
-    }()
-
     init(encounter: Encounter) {
         self.encounter = encounter
         self._viewModel = State(initialValue: EncounterViewModel(encounter: encounter))
@@ -222,7 +216,7 @@ extension EncounterView {
             Text(entity.name)
                 .lineLimit(1)
             if let roleText = viewModel.roleBadgeText(for: entity) {
-                LabelTag(text: roleText, color: .roleBadgeColor(for: entity.role), imageName: nil, hoverEffect: false, hoverColor: nil)
+                LabelTag(text: roleText, color: .roleBadgeColor(for: entity.role))
             }
             if !entity.affectingConditions.isEmpty {
                 Icons.affectedByConditions.foregroundStyle(.orange)
@@ -281,7 +275,7 @@ extension EncounterView {
         HStack {
             SelectAllTextField("Encounter name", text: $encounter.name)
             Text("Session")
-            SelectAllIntField(value: $encounter.session, formatter: formatter)
+            SelectAllIntField(value: $encounter.session)
                 .frame(width: 40)
             Image(systemName: "tag")
             TextField("Tags (comma separated)", text: $tagsText)

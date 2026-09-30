@@ -13,16 +13,9 @@ struct RulesLibraryView: View {
     @Query private var conditions: [Condition]
     @Query private var ruleActions: [RuleAction]
     @State private var viewModel = RulesLibraryViewModel()
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var selectedItemID: UUID?
     @State private var searchText = ""
     @State private var expandedSection: RulesLibrarySection?
-
-    private enum Constants {
-        static let minSplitViewWidth = 180.0
-        static let idealSplitViewWidth = 200.0
-        static let maxSplitViewWidth = 220.0
-    }
 
     private var filteredConditions: [Condition] {
         viewModel.sortedConditions(conditions.filter { $0.matchesSearch(searchText) })
@@ -49,51 +42,39 @@ struct RulesLibraryView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            VStack(spacing: 0) {
-                searchField
-                Divider()
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                        Section {
-                            if !searchText.isEmpty || expandedSection == .conditions {
-                                ForEach(filteredConditions) { condition in
-                                    conditionRow(condition)
-                                    Divider()
-                                }
-                            }
-                        } header: {
-                            sectionHeader(.conditions)
-                        }
-                        Section {
-                            if !searchText.isEmpty || expandedSection == .actions {
-                                ForEach(actionsOnly) { action in
-                                    actionRow(action)
-                                    Divider()
-                                }
-                            }
-                        } header: {
-                            sectionHeader(.actions)
-                        }
-                        Section {
-                            if !searchText.isEmpty || expandedSection == .activities {
-                                ForEach(activitiesOnly) { action in
-                                    actionRow(action)
-                                    Divider()
-                                }
-                            }
-                        } header: {
-                            sectionHeader(.activities)
+        LibrarySplitView(searchText: $searchText) {
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                Section {
+                    if !searchText.isEmpty || expandedSection == .conditions {
+                        ForEach(filteredConditions) { condition in
+                            conditionRow(condition)
+                            Divider()
                         }
                     }
+                } header: {
+                    sectionHeader(.conditions)
+                }
+                Section {
+                    if !searchText.isEmpty || expandedSection == .actions {
+                        ForEach(actionsOnly) { action in
+                            actionRow(action)
+                            Divider()
+                        }
+                    }
+                } header: {
+                    sectionHeader(.actions)
+                }
+                Section {
+                    if !searchText.isEmpty || expandedSection == .activities {
+                        ForEach(activitiesOnly) { action in
+                            actionRow(action)
+                            Divider()
+                        }
+                    }
+                } header: {
+                    sectionHeader(.activities)
                 }
             }
-            .navigationSplitViewColumnWidth(
-                min: Constants.minSplitViewWidth,
-                ideal: Constants.idealSplitViewWidth,
-                max: Constants.maxSplitViewWidth
-            )
-            .toolbar(removing: .sidebarToggle)
         } detail: {
             if let condition = selectedCondition {
                 conditionDetail(condition)
@@ -107,7 +88,6 @@ struct RulesLibraryView: View {
                 }
             }
         }
-        .navigationSplitViewStyle(.prominentDetail)
         .navigationTitle(viewModel.navigationTitle(selectedID: selectedItemID, conditions: conditions, actions: ruleActions))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -122,11 +102,6 @@ struct RulesLibraryView: View {
                     }
                     .padding(.horizontal)
                 }
-            }
-        }
-        .onChange(of: columnVisibility) { _, newValue in
-            if newValue != .all {
-                columnVisibility = .all
             }
         }
         .onAppear {
@@ -164,12 +139,6 @@ struct RulesLibraryView: View {
 }
 
 extension RulesLibraryView {
-    private var searchField: some View {
-        SearchField(text: $searchText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-    }
-
     private func sectionHeader(_ section: RulesLibrarySection) -> some View {
         CollapsibleSectionHeader(
             isExpanded: expandedSection == section,
@@ -268,19 +237,6 @@ extension RulesLibraryView {
 private struct RuleActionDetailView: View {
     @Bindable var action: RuleAction
     let viewModel: RulesLibraryViewModel
-    @State private var tagsBuffer: String
-
-    let formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter
-    }()
-
-    init(action: RuleAction, viewModel: RulesLibraryViewModel) {
-        self.action = action
-        self.viewModel = viewModel
-        self._tagsBuffer = State(initialValue: action.tags.joined(separator: ", "))
-    }
 
     var body: some View {
         ScrollView {
@@ -313,44 +269,17 @@ private struct RuleActionDetailView: View {
                     .labelsHidden()
                     .frame(width: 220)
                 }
-                HStack {
-                    Image(systemName: "tag")
-                    ForEach(action.tags, id: \.self) { tag in
-                        LabelTag(text: tag, color: .accentColor, imageName: nil, hoverEffect: false, hoverColor: nil)
-                    }
-                }
-                HStack {
-                    Image(systemName: "tag")
-                    TextField("Tags (comma separated)", text: $tagsBuffer)
-                        .onChange(of: tagsBuffer) { _, newValue in
-                            viewModel.updateTags(on: action, from: newValue)
-                        }
-                }
+                TagsEditor(tags: action.tags) { viewModel.updateTags(on: action, from: $0) }
                 Divider()
                 Text("Description")
                     .font(.headline)
                 TextEditor(text: $action.details)
                     .frame(minHeight: 200)
                 Divider()
-                HStack {
-                    Text("Archive of Nethys ID")
-                        .fontWeight(.semibold)
-                    SelectAllTextField("e.g. 88", text: aonIDBinding)
-                        .frame(width: 80)
-                    if let aonURL = action.aonURL {
-                        Link("View on Archive of Nethys", destination: aonURL)
-                    }
-                }
+                AoNIDField(aonID: $action.aonID, placeholder: "e.g. 88", url: action.aonURL)
             }
             .padding()
         }
-    }
-
-    private var aonIDBinding: Binding<String> {
-        Binding(
-            get: { action.aonID.map(String.init) ?? "" },
-            set: { newValue in action.aonID = Int(newValue.trimmingCharacters(in: .whitespaces)) }
-        )
     }
 }
 
