@@ -33,7 +33,9 @@ enum HelpSection: String, CaseIterable, Identifiable {
 
         Every library follows the same pattern: a sidebar on the left lists items — searchable, and grouped into collapsible sections you expand by clicking the header — while the right side shows the details of whatever is selected. Use the **Add** button in the toolbar to create a new item (in the Rules Library, it's a menu since there are three kinds of item); hover a row and click the trash icon to delete it.
 
-        Spells, conditions, and actions/activities can also be imported in bulk from Archive of Nethys, via **File → Import Data from Archive of Nethys…**. That item is only available once — once any of those three libraries has AoN-imported content, it's blocked, to avoid hammering Archive of Nethys with repeat requests. Wipe the relevant library from **Wipe Data** first if you want a fresh import. The **File** menu also has Export/Import Data for full backups, and a **Wipe Data** submenu for clearing out a section entirely.
+        Spells, conditions, and actions/activities can also be imported in bulk from Archive of Nethys, via **File → Import Data from Archive of Nethys…**. That item is only available once — once any of those three libraries has AoN-imported content, it's blocked, to avoid hammering Archive of Nethys with repeat requests. Wipe the relevant library from **Wipe Data** first if you want a fresh import.
+
+        The **File** menu also has separate Export/Import commands for backups — **Encounters and Entities**, **Spells, Conditions and Actions**, or **Everything** — plus a **Wipe Data** submenu for clearing out a section entirely. Importing any one of those only replaces the data it names; the rest of your library is untouched, even if the chosen file contains other sections too.
         """
         case .encounters: return """
         Encounters live in the Combat Tracker, organized into numbered **Sessions** in the sidebar. Sessions are collapsible — click a session header to expand it.

@@ -3,11 +3,47 @@ import SwiftData
 
 enum DataBackupError: LocalizedError {
     case invalidFormat
+    case noMatchingData
 
     var errorDescription: String? {
         switch self {
         case .invalidFormat:
             return "This file doesn't look like a PathCombat backup."
+        case .noMatchingData:
+            return "This file doesn't contain any data for the selected import."
+        }
+    }
+}
+
+/// Which part of the library an export/import touches. Exporting only ever writes the
+/// sections in scope; importing only ever wipes and replaces the sections in scope that are
+/// actually present in the chosen file — everything else in the library is left untouched.
+enum DataBackupScope {
+    case encountersAndEntities
+    case referenceLibraries
+    case everything
+
+    var title: String {
+        switch self {
+        case .encountersAndEntities: return "Encounters and Entities"
+        case .referenceLibraries: return "Spells, Conditions and Actions"
+        case .everything: return "Everything"
+        }
+    }
+
+    var fileNameSuffix: String {
+        switch self {
+        case .encountersAndEntities: return "Encounters and Entities"
+        case .referenceLibraries: return "Spells, Conditions and Actions"
+        case .everything: return "Backup"
+        }
+    }
+
+    var replaceDescription: String {
+        switch self {
+        case .encountersAndEntities: return "all current encounters and entities"
+        case .referenceLibraries: return "all current spells, conditions, and actions"
+        case .everything: return "all current data"
         }
     }
 }
@@ -35,69 +71,93 @@ enum DataBackupService {
 
     private static let dateFormatter = ISO8601DateFormatter()
 
-    static func exportCSV(context: ModelContext) throws -> String {
-        let conditions = try context.fetch(FetchDescriptor<Condition>())
-        let spells = try context.fetch(FetchDescriptor<Spell>())
-        let actions = try context.fetch(FetchDescriptor<RuleAction>())
-        let entities = try context.fetch(FetchDescriptor<CombatEntity>())
-        let encounterEntities = try context.fetch(FetchDescriptor<EncounterCombatEntity>())
-        let encounters = try context.fetch(FetchDescriptor<Encounter>())
+    private static func markers(for scope: DataBackupScope) -> Set<String> {
+        switch scope {
+        case .encountersAndEntities:
+            return [entitiesMarker, encounterEntitiesMarker, encountersMarker]
+        case .referenceLibraries:
+            return [conditionsMarker, spellsMarker, actionsMarker]
+        case .everything:
+            return [conditionsMarker, spellsMarker, actionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
+        }
+    }
 
+    static func exportCSV(context: ModelContext, scope: DataBackupScope) throws -> String {
+        let scopeMarkers = markers(for: scope)
         var lines: [String] = []
 
-        lines.append(conditionsMarker)
-        lines.append(CSVWriter.row(conditionsHeader))
-        for condition in conditions {
-            lines.append(CSVWriter.row([
-                condition.id.uuidString, condition.name, condition.details, condition.damage ?? "",
-                condition.isPersistent ? "true" : "false", condition.aonID.map(String.init) ?? ""
-            ]))
+        if scopeMarkers.contains(conditionsMarker) {
+            let conditions = try context.fetch(FetchDescriptor<Condition>())
+            lines.append(conditionsMarker)
+            lines.append(CSVWriter.row(conditionsHeader))
+            for condition in conditions {
+                lines.append(CSVWriter.row([
+                    condition.id.uuidString, condition.name, condition.details, condition.damage ?? "",
+                    condition.isPersistent ? "true" : "false", condition.aonID.map(String.init) ?? ""
+                ]))
+            }
+            lines.append("")
         }
-        lines.append("")
 
-        lines.append(spellsMarker)
-        lines.append(CSVWriter.row(spellsHeader))
-        for spell in spells {
-            lines.append(CSVWriter.row(spellRow(for: spell)))
+        if scopeMarkers.contains(spellsMarker) {
+            let spells = try context.fetch(FetchDescriptor<Spell>())
+            lines.append(spellsMarker)
+            lines.append(CSVWriter.row(spellsHeader))
+            for spell in spells {
+                lines.append(CSVWriter.row(spellRow(for: spell)))
+            }
+            lines.append("")
         }
-        lines.append("")
 
-        lines.append(actionsMarker)
-        lines.append(CSVWriter.row(actionsHeader))
-        for action in actions {
-            lines.append(CSVWriter.row(actionRow(for: action)))
+        if scopeMarkers.contains(actionsMarker) {
+            let actions = try context.fetch(FetchDescriptor<RuleAction>())
+            lines.append(actionsMarker)
+            lines.append(CSVWriter.row(actionsHeader))
+            for action in actions {
+                lines.append(CSVWriter.row(actionRow(for: action)))
+            }
+            lines.append("")
         }
-        lines.append("")
 
-        lines.append(entitiesMarker)
-        lines.append(CSVWriter.row(entityStatsHeader))
-        for entity in entities {
-            lines.append(CSVWriter.row(entityStatsRow(for: entity)))
+        if scopeMarkers.contains(entitiesMarker) {
+            let entities = try context.fetch(FetchDescriptor<CombatEntity>())
+            lines.append(entitiesMarker)
+            lines.append(CSVWriter.row(entityStatsHeader))
+            for entity in entities {
+                lines.append(CSVWriter.row(entityStatsRow(for: entity)))
+            }
+            lines.append("")
         }
-        lines.append("")
 
-        lines.append(encounterEntitiesMarker)
-        lines.append(CSVWriter.row(entityStatsHeader))
-        for entity in encounterEntities {
-            lines.append(CSVWriter.row(entityStatsRow(for: entity)))
+        if scopeMarkers.contains(encounterEntitiesMarker) {
+            let encounterEntities = try context.fetch(FetchDescriptor<EncounterCombatEntity>())
+            lines.append(encounterEntitiesMarker)
+            lines.append(CSVWriter.row(entityStatsHeader))
+            for entity in encounterEntities {
+                lines.append(CSVWriter.row(entityStatsRow(for: entity)))
+            }
+            lines.append("")
         }
-        lines.append("")
 
-        lines.append(encountersMarker)
-        lines.append(CSVWriter.row(encountersHeader))
-        for encounter in encounters {
-            lines.append(CSVWriter.row([
-                encounter.id.uuidString,
-                encounter.name,
-                dateFormatter.string(from: encounter.date),
-                encounter.completed ? "true" : "false",
-                String(encounter.currentInitiative),
-                String(encounter.elapsedCombatRounds),
-                encounter.actingEntity?.uuidString ?? "",
-                encounter.combatEntities.map(\.id.uuidString).joined(separator: ";"),
-                String(encounter.session),
-                encounter.tags.joined(separator: ";")
-            ]))
+        if scopeMarkers.contains(encountersMarker) {
+            let encounters = try context.fetch(FetchDescriptor<Encounter>())
+            lines.append(encountersMarker)
+            lines.append(CSVWriter.row(encountersHeader))
+            for encounter in encounters {
+                lines.append(CSVWriter.row([
+                    encounter.id.uuidString,
+                    encounter.name,
+                    dateFormatter.string(from: encounter.date),
+                    encounter.completed ? "true" : "false",
+                    String(encounter.currentInitiative),
+                    String(encounter.elapsedCombatRounds),
+                    encounter.actingEntity?.uuidString ?? "",
+                    encounter.combatEntities.map(\.id.uuidString).joined(separator: ";"),
+                    String(encounter.session),
+                    encounter.tags.joined(separator: ";")
+                ]))
+            }
+            lines.append("")
         }
 
         return lines.joined(separator: "\n")
@@ -138,60 +198,80 @@ enum DataBackupService {
         try context.save()
     }
 
-    static func importCSV(_ text: String, context: ModelContext) throws {
+    /// Wipes and replaces only the sections that are both in `scope` and actually present in
+    /// `text` — a section in scope but missing from the file is left untouched rather than
+    /// wiped to empty, and a section present in the file but outside `scope` is ignored
+    /// entirely, so e.g. importing "Spells, Conditions and Actions" from a full backup never
+    /// touches your encounters or entities.
+    static func importCSV(_ text: String, context: ModelContext, scope: DataBackupScope) throws {
         let sections = try parseSections(text)
-
-        try context.delete(model: Encounter.self)
-        try context.delete(model: EncounterCombatEntity.self)
-        try context.delete(model: CombatEntity.self)
-        try context.delete(model: Condition.self)
-        try context.delete(model: Spell.self)
-        try context.delete(model: RuleAction.self)
-
-        for row in sections[conditionsMarker] ?? [] {
-            guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
-            let damage = row.count >= 4 && !row[3].isEmpty ? row[3] : nil
-            let isPersistent = row.count >= 5 ? row[4] == "true" : nil
-            let aonID = row.count >= 6 && !row[5].isEmpty ? Int(row[5]) : nil
-            context.insert(Condition(name: row[1], id: id, description: row[2], isPersistent: isPersistent, damage: damage, aonID: aonID))
+        let markersToApply = markers(for: scope).filter { sections[$0] != nil }
+        guard !markersToApply.isEmpty else {
+            throw DataBackupError.noMatchingData
         }
 
-        for row in sections[spellsMarker] ?? [] {
-            guard let spell = parseSpell(from: row) else { continue }
-            context.insert(spell)
+        if markersToApply.contains(conditionsMarker) {
+            try context.delete(model: Condition.self)
+            for row in sections[conditionsMarker] ?? [] {
+                guard row.count >= 3, let id = UUID(uuidString: row[0]) else { continue }
+                let damage = row.count >= 4 && !row[3].isEmpty ? row[3] : nil
+                let isPersistent = row.count >= 5 ? row[4] == "true" : nil
+                let aonID = row.count >= 6 && !row[5].isEmpty ? Int(row[5]) : nil
+                context.insert(Condition(name: row[1], id: id, description: row[2], isPersistent: isPersistent, damage: damage, aonID: aonID))
+            }
         }
 
-        for row in sections[actionsMarker] ?? [] {
-            guard let action = parseAction(from: row) else { continue }
-            context.insert(action)
+        if markersToApply.contains(spellsMarker) {
+            try context.delete(model: Spell.self)
+            for row in sections[spellsMarker] ?? [] {
+                guard let spell = parseSpell(from: row) else { continue }
+                context.insert(spell)
+            }
         }
 
-        for row in sections[entitiesMarker] ?? [] {
-            guard let entity = parseCombatEntity(from: row) else { continue }
-            context.insert(entity)
+        if markersToApply.contains(actionsMarker) {
+            try context.delete(model: RuleAction.self)
+            for row in sections[actionsMarker] ?? [] {
+                guard let action = parseAction(from: row) else { continue }
+                context.insert(action)
+            }
+        }
+
+        if markersToApply.contains(entitiesMarker) {
+            try context.delete(model: CombatEntity.self)
+            for row in sections[entitiesMarker] ?? [] {
+                guard let entity = parseCombatEntity(from: row) else { continue }
+                context.insert(entity)
+            }
         }
 
         var encounterEntitiesByID: [UUID: EncounterCombatEntity] = [:]
-        for row in sections[encounterEntitiesMarker] ?? [] {
-            guard let id = row.first.flatMap(UUID.init(uuidString:)), let entity = parseEncounterCombatEntity(from: row) else { continue }
-            context.insert(entity)
-            encounterEntitiesByID[id] = entity
+        if markersToApply.contains(encounterEntitiesMarker) {
+            try context.delete(model: EncounterCombatEntity.self)
+            for row in sections[encounterEntitiesMarker] ?? [] {
+                guard let id = row.first.flatMap(UUID.init(uuidString:)), let entity = parseEncounterCombatEntity(from: row) else { continue }
+                context.insert(entity)
+                encounterEntitiesByID[id] = entity
+            }
         }
 
-        for row in sections[encountersMarker] ?? [] {
-            guard row.count >= 8, let id = UUID(uuidString: row[0]) else { continue }
-            let combatEntities = splitList(row[7]).compactMap { UUID(uuidString: $0) }.compactMap { encounterEntitiesByID[$0] }
-            context.insert(Encounter(
-                name: row[1],
-                id: id,
-                date: dateFormatter.date(from: row[2]),
-                completed: row[3] == "true",
-                combatEntities: combatEntities,
-                currentInitiative: Int(row[4]),
-                elapsedCombatRounds: Int(row[5]),
-                actingEntity: UUID(uuidString: row[6]),
-                session: row.count >= 9 ? Int(row[8]) : nil,
-                tags: row.count >= 10 ? splitList(row[9]) : nil))
+        if markersToApply.contains(encountersMarker) {
+            try context.delete(model: Encounter.self)
+            for row in sections[encountersMarker] ?? [] {
+                guard row.count >= 8, let id = UUID(uuidString: row[0]) else { continue }
+                let combatEntities = splitList(row[7]).compactMap { UUID(uuidString: $0) }.compactMap { encounterEntitiesByID[$0] }
+                context.insert(Encounter(
+                    name: row[1],
+                    id: id,
+                    date: dateFormatter.date(from: row[2]),
+                    completed: row[3] == "true",
+                    combatEntities: combatEntities,
+                    currentInitiative: Int(row[4]),
+                    elapsedCombatRounds: Int(row[5]),
+                    actingEntity: UUID(uuidString: row[6]),
+                    session: row.count >= 9 ? Int(row[8]) : nil,
+                    tags: row.count >= 10 ? splitList(row[9]) : nil))
+            }
         }
 
         try context.save()
@@ -378,9 +458,9 @@ enum DataBackupService {
         return (try? JSONDecoder().decode([AppliedCondition].self, from: data)) ?? []
     }
 
+    private static let allMarkers = [conditionsMarker, spellsMarker, actionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
+
     private static func parseSections(_ text: String) throws -> [String: [[String]]] {
-        let requiredMarkers = [conditionsMarker, entitiesMarker, encounterEntitiesMarker, encountersMarker]
-        let allMarkers = requiredMarkers + [spellsMarker, actionsMarker]
         let rows = CSVParser.parseRows(text)
 
         var sections: [String: [[String]]] = [:]
@@ -403,7 +483,7 @@ enum DataBackupService {
             sections[currentMarker, default: []].append(row)
         }
 
-        guard requiredMarkers.allSatisfy({ sections[$0] != nil }) else {
+        guard !sections.isEmpty else {
             throw DataBackupError.invalidFormat
         }
 

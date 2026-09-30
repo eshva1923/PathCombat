@@ -3,33 +3,33 @@ import SwiftData
 import UniformTypeIdentifiers
 
 enum DataBackupCommands {
-    static func exportData(context: ModelContext) {
+    static func exportData(scope: DataBackupScope, context: ModelContext) {
         let panel = NSSavePanel()
-        panel.title = "Export PathCombat Data"
-        panel.nameFieldStringValue = "PathCombat Backup.csv"
+        panel.title = "Export \(scope.title)"
+        panel.nameFieldStringValue = "PathCombat \(scope.fileNameSuffix).csv"
         panel.allowedContentTypes = [.commaSeparatedText]
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
-            let csv = try DataBackupService.exportCSV(context: context)
+            let csv = try DataBackupService.exportCSV(context: context, scope: scope)
             try csv.write(to: url, atomically: true, encoding: .utf8)
         } catch {
             presentError(error, title: "Export Failed")
         }
     }
 
-    static func importData(context: ModelContext) {
+    static func importData(scope: DataBackupScope, context: ModelContext) {
         let panel = NSOpenPanel()
-        panel.title = "Import PathCombat Data"
+        panel.title = "Import \(scope.title)"
         panel.allowedContentTypes = [.commaSeparatedText]
         panel.allowsMultipleSelection = false
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         let confirmation = NSAlert()
-        confirmation.messageText = "Replace all existing data?"
-        confirmation.informativeText = "Importing will permanently delete all current encounters, entities, and conditions, replacing them with the contents of \"\(url.lastPathComponent)\"."
+        confirmation.messageText = "Replace \(scope.title.lowercased())?"
+        confirmation.informativeText = "Importing will permanently delete \(scope.replaceDescription), replacing them with the contents of \"\(url.lastPathComponent)\". Nothing else in your library is affected."
         confirmation.alertStyle = .warning
         confirmation.addButton(withTitle: "Import and Replace")
         confirmation.addButton(withTitle: "Cancel")
@@ -37,7 +37,7 @@ enum DataBackupCommands {
 
         do {
             let csv = try String(contentsOf: url, encoding: .utf8)
-            try DataBackupService.importCSV(csv, context: context)
+            try DataBackupService.importCSV(csv, context: context, scope: scope)
         } catch {
             presentError(error, title: "Import Failed")
         }
