@@ -1,7 +1,12 @@
 import Foundation
 import SwiftData
 
-/// Imports the Pathfinder 2e spell list from Archive of Nethys's public search index.
+struct SpellImportResult {
+    let added: Int
+    let alreadyPresent: Int
+    let skippedLegacy: Int
+}
+
 enum AoNSpellImportService {
     private static let sourceFields = [
         "name", "level", "spell_type", "tradition", "actions", "range_raw", "area_raw", "target", "trait_raw",
@@ -25,50 +30,33 @@ enum AoNSpellImportService {
         let release_date: String?
     }
 
-    /// Fetches the current, ORC-licensed spell list and upserts it into the store, matching
-    /// existing spells by `aonID`. Spells already imported get every field refreshed from AoN;
-    /// spells you created yourself (no matching `aonID`) are never touched. Legacy (pre-remaster
-    /// OGL) spells with no ORC equivalent are skipped — anything already in your library, whether
-    /// from an earlier import or written by hand, is left as-is either way.
-    static func importSpells(context: ModelContext) async throws -> AoNImportResult {
+    static func importSpells(context: ModelContext) async throws -> SpellImportResult {
         let sources: [SpellSource] = try await AoNSearchClient.fetchAll(category: "spell", sourceFields: sourceFields)
         let keepers = AoNSearchClient.resolveKeepers(sources)
 
         let existing = try context.fetch(FetchDescriptor<Spell>())
-        var existingByAonID: [Int: Spell] = [:]
-        for spell in existing {
-            if let aonID = spell.aonID {
-                existingByAonID[aonID] = spell
-            }
-        }
+        let existingAonIDs = Set(existing.compactMap(\.aonID))
 
-        var imported = 0
-        var skipped = 0
+        var added = 0
+        var alreadyPresent = 0
+        var skippedLegacy = 0
         for keeper in keepers {
+            guard let aonID = AoNSearchClient.aonID(from: keeper.url) else { continue }
             guard AoNSearchClient.isORC(keeper) else {
-                skipped += 1
+                skippedLegacy += 1
                 continue
             }
-            guard let mapped = makeSpell(from: keeper), let aonID = mapped.aonID else { continue }
-            if let match = existingByAonID[aonID] {
-                match.name = mapped.name
-                match.level = mapped.level
-                match.isFocusSpell = mapped.isFocusSpell
-                match.details = mapped.details
-                match.traditions = mapped.traditions
-                match.speed = mapped.speed
-                match.range = mapped.range
-                match.area = mapped.area
-                match.target = mapped.target
-                match.tags = mapped.tags
-            } else {
-                context.insert(mapped)
+            guard !existingAonIDs.contains(aonID) else {
+                alreadyPresent += 1
+                continue
             }
-            imported += 1
+            guard let mapped = makeSpell(from: keeper) else { continue }
+            context.insert(mapped)
+            added += 1
         }
 
         try context.save()
-        return AoNImportResult(imported: imported, skipped: skipped)
+        return SpellImportResult(added: added, alreadyPresent: alreadyPresent, skippedLegacy: skippedLegacy)
     }
 
     private static func makeSpell(from keeper: SpellSource) -> Spell? {
@@ -103,10 +91,6 @@ enum AoNSpellImportService {
             tags: tags)
     }
 
-    /// Everything after the header block, which may itself contain further `---`-separated
-    /// segments (e.g. a trailing "Heightened" scaling note) — only the first `---` (which
-    /// divides the structured header from the narrative body) should be dropped, not every
-    /// occurrence, or later segments get discarded along with the main description.
     private static func extractDetails(from markdown: String) -> String {
         let parts = markdown.components(separatedBy: "\n---\n")
         var body = parts.count > 1 ? parts.dropFirst().joined(separator: "\n\n") : markdown

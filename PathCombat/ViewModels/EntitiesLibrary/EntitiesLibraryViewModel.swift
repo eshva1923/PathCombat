@@ -33,8 +33,6 @@ final class EntitiesLibraryViewModel {
         return AppSection.entitiesLibrary.rawValue
     }
 
-    /// Groups entities by role (PC first, then the rest alphabetically by display name),
-    /// with entities inside each section sorted by level descending, then name ascending.
     func groupedEntities(_ entities: [CombatEntity]) -> [(role: CombatRole, entities: [CombatEntity])] {
         let grouped = Dictionary(grouping: entities, by: { $0.role })
         let roles = grouped.keys.sorted { lhs, rhs in

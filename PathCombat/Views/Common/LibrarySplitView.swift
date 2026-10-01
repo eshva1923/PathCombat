@@ -4,11 +4,6 @@ private let minSplitViewWidth = 180.0
 private let idealSplitViewWidth = 200.0
 private let maxSplitViewWidth = 220.0
 
-/// The shared `NavigationSplitView` shell for every library screen (Spells, Rules and
-/// Conditions, Entities, Combat Tracker): a fixed-width sidebar with a search field on top and
-/// the caller's `sidebarContent` below, and a `detail` pane. Owns `columnVisibility` and snaps
-/// it back to `.all` on any change, since there's no sidebar-toggle button (it's removed) to
-/// bring a collapsed sidebar back.
 struct LibrarySplitView<SidebarContent: View, Detail: View>: View {
     @Binding var searchText: String
     @ViewBuilder let sidebarContent: () -> SidebarContent

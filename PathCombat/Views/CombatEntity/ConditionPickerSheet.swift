@@ -32,9 +32,9 @@ struct ConditionPickerSheet: View {
     var body: some View {
         PickerSheet(
             title: "Add Condition",
-            items: availableConditions,
-            noun: "conditions",
             searchText: $searchText,
+            isEmpty: availableConditions.isEmpty,
+            emptyMessage: pickerSheetEmptyMessage(noun: "conditions", searchText: searchText),
             isAddDisabled: selectedConditionID == nil,
             onAdd: {
                 if let selectedConditionID,
@@ -42,10 +42,13 @@ struct ConditionPickerSheet: View {
                     onAdd(condition, Int(valueText), condition.resolvedDamage(from: damageText))
                 }
             },
-            row: { condition in
-                LibraryRow(isSelected: selectedConditionID == condition.id, onSelect: { selectedConditionID = condition.id }) {
-                    Text(condition.name)
-                        .fontWeight(.semibold)
+            accessory: { EmptyView() },
+            listContent: {
+                LazyVStack(spacing: 0) {
+                    ForEach(availableConditions) { condition in
+                        conditionRow(condition)
+                        Divider()
+                    }
                 }
             },
             footer: {
@@ -69,6 +72,13 @@ struct ConditionPickerSheet: View {
         )
         .onChange(of: selectedConditionID) { _, _ in
             damageText = selectedCondition?.damage ?? ""
+        }
+    }
+
+    private func conditionRow(_ condition: Condition) -> some View {
+        LibraryRow(isSelected: selectedConditionID == condition.id, onSelect: { selectedConditionID = condition.id }) {
+            Text(condition.name)
+                .fontWeight(.semibold)
         }
     }
 }

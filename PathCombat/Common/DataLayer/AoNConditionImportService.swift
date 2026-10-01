@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 
-/// Imports the Pathfinder 2e condition list from Archive of Nethys's public search index.
 enum AoNConditionImportService {
     private static let sourceFields = ["name", "markdown", "url", "legacy_id", "remaster_id", "release_date"]
 
@@ -14,11 +13,6 @@ enum AoNConditionImportService {
         let release_date: String?
     }
 
-    /// Fetches the current, ORC-licensed condition list and upserts it into the store, matching
-    /// existing conditions by `aonID`. Conditions already imported get every field refreshed
-    /// from AoN; conditions you created yourself (no matching `aonID`) are never touched. Legacy
-    /// (pre-remaster OGL) conditions with no ORC equivalent are skipped — anything already in
-    /// your library, whether from an earlier import or written by hand, is left as-is either way.
     static func importConditions(context: ModelContext) async throws -> AoNImportResult {
         let sources: [ConditionSource] = try await AoNSearchClient.fetchAll(category: "condition", sourceFields: sourceFields)
         let keepers = AoNSearchClient.resolveKeepers(sources)
@@ -66,10 +60,6 @@ enum AoNConditionImportService {
             aonID: aonID)
     }
 
-    /// Drops the `<title level="1">...</title>` header and `**Source** ... pg. N` line, then
-    /// promotes nested `<title level="2" ...>Heading</title>` markers (as seen in Persistent
-    /// Damage's much longer body) into bold sub-headings *before* generic tag stripping, so
-    /// they survive as visually distinct paragraphs instead of collapsing into one wall of text.
     private static func extractDetails(from markdown: String) -> String {
         var body = markdown
         body = body.replacingOccurrences(of: #"<title level="1"[^>]*>.*?</title>"#, with: "", options: .regularExpression)

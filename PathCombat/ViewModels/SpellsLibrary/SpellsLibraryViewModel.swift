@@ -38,9 +38,6 @@ final class SpellsLibraryViewModel {
         return .rank(spell.level)
     }
 
-    /// Cantrips and focus spells are pulled out into their own sections regardless of rank
-    /// (cantrips first, focus last), each ordered by rank then name; everything else groups
-    /// by rank.
     func groupedSpells(_ spells: [Spell]) -> [(section: SpellLibrarySection, spells: [Spell])] {
         let byRankThenName: (Spell, Spell) -> Bool = { $0.level != $1.level ? $0.level < $1.level : $0.name < $1.name }
 

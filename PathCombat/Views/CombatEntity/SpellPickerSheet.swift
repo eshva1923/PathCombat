@@ -28,16 +28,24 @@ struct SpellPickerSheet: View {
     var body: some View {
         PickerSheet(
             title: title,
-            items: availableSpells,
-            noun: "spells",
             searchText: $searchText,
+            isEmpty: availableSpells.isEmpty,
+            emptyMessage: pickerSheetEmptyMessage(noun: "spells", searchText: searchText),
             isAddDisabled: selectedSpellID == nil,
             onAdd: {
                 if let selectedSpellID, let spell = availableSpells.first(where: { $0.id == selectedSpellID }) {
                     onAdd(spell)
                 }
             },
-            row: { spell in spellRow(spell) },
+            accessory: { EmptyView() },
+            listContent: {
+                LazyVStack(spacing: 0) {
+                    ForEach(availableSpells) { spell in
+                        spellRow(spell)
+                        Divider()
+                    }
+                }
+            },
             footer: { EmptyView() }
         )
     }

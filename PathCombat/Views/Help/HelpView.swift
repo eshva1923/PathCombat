@@ -33,7 +33,7 @@ enum HelpSection: String, CaseIterable, Identifiable {
 
         Every library follows the same pattern: a sidebar on the left lists items — searchable, and grouped into collapsible sections you expand by clicking the header — while the right side shows the details of whatever is selected. Use the **Add** button in the toolbar to create a new item (in the Rules Library, it's a menu since there are three kinds of item); hover a row and click the trash icon to delete it.
 
-        Spells, conditions, and actions/activities can also be imported in bulk from Archive of Nethys, via **File → Import Data from Archive of Nethys…**. That item is only available once — once any of those three libraries has AoN-imported content, it's blocked, to avoid hammering Archive of Nethys with repeat requests. Wipe the relevant library from **Wipe Data** first if you want a fresh import.
+        Spells, conditions, and actions/activities can also be imported in bulk from Archive of Nethys, via **File → Import Data from Archive of Nethys…**. Spells only ever add brand-new entries and never touch a spell already in your library (even one you've edited), so it's safe to re-run any time Archive of Nethys publishes something new. Conditions and actions/activities are a one-time import — once either already has AoN-imported content, re-running skips them, to avoid hammering Archive of Nethys with repeat requests; wipe the relevant library from **Wipe Data** first if you want a fresh import of those.
 
         The **File** menu also has separate Export/Import commands for backups — **Encounters and Entities**, **Spells, Conditions and Actions**, or **Everything** — plus a **Wipe Data** submenu for clearing out a section entirely. Importing any one of those only replaces the data it names; the rest of your library is untouched, even if the chosen file contains other sections too.
         """
@@ -41,6 +41,8 @@ enum HelpSection: String, CaseIterable, Identifiable {
         Encounters live in the Combat Tracker, organized into numbered **Sessions** in the sidebar. Sessions are collapsible — click a session header to expand it.
 
         To create one, click **+** in the toolbar. Give it a name, session number, and optional tags, then click **Add to encounter** to load entities from your Entities Library. PCs and bosses can only be added to an encounter once each; other roles (like a squad of goblins) can be added as many times as you like.
+
+        The entity picker groups your library by role into collapsible sections — only one open at a time, starting with PCs — and a row of toggle buttons under the search field narrows which roles are searched; turn a role off to exclude it from both the search and the sections shown.
 
         Once entities are loaded:
 

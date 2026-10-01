@@ -1,9 +1,6 @@
 import Foundation
 import SwiftData
 
-/// Imports Pathfinder 2e actions and activities from Archive of Nethys's public search index.
-/// AoN has no separate "activity" category: activities are action documents tagged Exploration
-/// or Downtime; everything else is a plain action.
 enum AoNActionImportService {
     private static let sourceFields = ["name", "actions", "trait_raw", "markdown", "url", "legacy_id", "remaster_id", "release_date"]
     private static let activityTraits: Set<String> = ["Exploration", "Downtime"]
@@ -25,11 +22,6 @@ enum AoNActionImportService {
         let skipped: Int
     }
 
-    /// Fetches the current, ORC-licensed action list and upserts it into the store, matching
-    /// existing entries by `aonID`. Entries already imported get every field refreshed from AoN;
-    /// entries you created yourself (no matching `aonID`) are never touched. Legacy (pre-remaster
-    /// OGL) entries with no ORC equivalent are skipped — anything already in your library,
-    /// whether from an earlier import or written by hand, is left as-is either way.
     static func importActions(context: ModelContext) async throws -> ImportCounts {
         let sources: [ActionSource] = try await AoNSearchClient.fetchAll(category: "action", sourceFields: sourceFields)
         let keepers = AoNSearchClient.resolveKeepers(sources)
@@ -98,9 +90,6 @@ enum AoNActionImportService {
             aonID: aonID)
     }
 
-    /// Everything up to the first `---` is the structured header (title, traits, source, and —
-    /// for reactions/activities with prerequisites — Trigger/Requirements). Title, traits, and
-    /// Source are dropped as noise; Trigger/Requirements are kept and joined with the body.
     private static func extractDetails(from markdown: String) -> String {
         let parts = markdown.components(separatedBy: "\n---\n")
         var header = parts[0]

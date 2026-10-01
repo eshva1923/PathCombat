@@ -11,6 +11,7 @@ struct EncounterView: View {
     @State private var tagsText: String
     @State private var isConfirmingReset = false
     @State private var entityPendingRemoval: EncounterCombatEntity?
+    @State private var hoveredEntityID: UUID?
 
     init(encounter: Encounter) {
         self.encounter = encounter
@@ -168,7 +169,12 @@ extension EncounterView {
                 List(viewModel.sortedByInitiative) { entity in
                     initiativeRow(entity, proxy: proxy)
                         .buttonStyle(.plain)
-                        .listRowBackground(viewModel.rowBackground(for: entity))
+                        .listRowBackground(
+                            hoveredEntityID == entity.id ? Color.secondary.opacity(0.25) : viewModel.rowBackground(for: entity)
+                        )
+                        .onHover { hovering in
+                            hoveredEntityID = hovering ? entity.id : nil
+                        }
                 }
                 .listStyle(.plain)
             }

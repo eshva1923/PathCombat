@@ -23,9 +23,6 @@ extension Color {
     }
 }
 
-/// The search field used at the top of every library/tracker sidebar and picker sheet:
-/// a search icon, a select-all-on-focus text field, and a clear button that appears once
-/// there's text. Callers own their own outer padding, since that varies by context.
 struct SearchField: View {
     @Binding var text: String
     var placeholder: String = ""
@@ -47,10 +44,6 @@ struct SearchField: View {
     }
 }
 
-/// A tappable, collapsible section header (chevron rotates to indicate expanded state) used
-/// by every sidebar that groups its rows into sections. Callers supply the leading content
-/// (label text, optional trailing icon) via `content`; this owns the chevron, background,
-/// and toggle behavior shared by every section header.
 struct CollapsibleSectionHeader<Content: View>: View {
     let isExpanded: Bool
     let onToggle: () -> Void
@@ -73,10 +66,6 @@ struct CollapsibleSectionHeader<Content: View>: View {
     }
 }
 
-/// A selectable, hoverable sidebar/picker row: tapping selects it, hovering reveals an
-/// optional trailing delete button, and the background reflects selected/hovered state.
-/// Used by every library sidebar row and picker-sheet row — callers supply only the row's
-/// own content.
 struct LibraryRow<Content: View>: View {
     let isSelected: Bool
     let onSelect: () -> Void
@@ -114,9 +103,6 @@ struct LibraryRow<Content: View>: View {
     }
 }
 
-/// The "Archive of Nethys ID" field + "View on Archive of Nethys" link shown on every library
-/// detail view that's importable from AoN (spells, actions). Owns the Int?<->String text
-/// conversion so callers just bind straight to the model's `aonID`.
 struct AoNIDField: View {
     @Binding var aonID: Int?
     var placeholder: String = ""
@@ -142,10 +128,6 @@ struct AoNIDField: View {
     }
 }
 
-/// The tags row shown wherever an item's tags appear: a buffered comma-separated edit field
-/// while editing it in its own library (`isEditable: true`, the default), or a read-only row of
-/// chips everywhere else the item is shown. Owns its own buffer, seeded from `tags` and
-/// reported back via `onChange`.
 struct TagsEditor: View {
     let tags: [String]
     var isEditable: Bool = true
@@ -178,7 +160,6 @@ struct TagsEditor: View {
     }
 }
 
-/// The "create a new X" placeholder shown in a detail pane when nothing is selected.
 struct CreateNewItemButton: View {
     let title: String
     let action: () -> Void
@@ -210,10 +191,15 @@ struct LabelTag: View {
                 Image(systemName: imageName)
             }
             Text(text)
-                .padding(3)
-                .background(color)
+                .padding(5)
+                .background(.clear)
                 .cornerRadius(5)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(color, lineWidth: 2)
+                )
         }
+        .contentShape(Rectangle())
         .onHover { hovering in
             guard hoverEffect else { return }
             let hoverColor = hoverColor ?? Color.secondary

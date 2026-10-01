@@ -2,7 +2,6 @@ import SwiftUI
 import AppKit
 
 extension NumberFormatter {
-    /// The plain decimal formatter shared by every `SelectAllIntField`/`LabelStat` in the app.
     static let decimal: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

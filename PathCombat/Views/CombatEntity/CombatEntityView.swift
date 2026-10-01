@@ -135,7 +135,7 @@ struct CombatEntityView<Entity: CombatEntityStats>: View {
                     }
             } else {
                 ForEach(combatEntity.speed, id: \.self) { speed in
-                    LabelTag(text: speed.displayText, color: .accentColor)
+                    LabelTag(text: speed.displayText, color: .secondary.opacity(0.25))
                 }
             }
         }

@@ -15,9 +15,6 @@ enum DataBackupError: LocalizedError {
     }
 }
 
-/// Which part of the library an export/import touches. Exporting only ever writes the
-/// sections in scope; importing only ever wipes and replaces the sections in scope that are
-/// actually present in the chosen file — everything else in the library is left untouched.
 enum DataBackupScope {
     case encountersAndEntities
     case referenceLibraries
@@ -198,11 +195,6 @@ enum DataBackupService {
         try context.save()
     }
 
-    /// Wipes and replaces only the sections that are both in `scope` and actually present in
-    /// `text` — a section in scope but missing from the file is left untouched rather than
-    /// wiped to empty, and a section present in the file but outside `scope` is ignored
-    /// entirely, so e.g. importing "Spells, Conditions and Actions" from a full backup never
-    /// touches your encounters or entities.
     static func importCSV(_ text: String, context: ModelContext, scope: DataBackupScope) throws {
         let sections = try parseSections(text)
         let markersToApply = markers(for: scope).filter { sections[$0] != nil }

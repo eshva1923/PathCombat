@@ -43,56 +43,57 @@ enum DataBackupCommands {
         }
     }
 
-    /// Imports spells, conditions, and actions/activities from Archive of Nethys in one go.
-    /// Blocked once any of the three libraries already contains AoN-imported content (an
-    /// entry with an `aonID`), so a re-run never hits Archive of Nethys's search index just to
-    /// discover there's nothing new to do. Libraries containing only hand-made entries (no
-    /// `aonID`) don't count, so a first import is always available.
     static func importDataFromAoN(context: ModelContext) {
-        guard !hasImportedAoNData(context: context) else {
-            let alert = NSAlert()
-            alert.messageText = "Already Imported"
-            alert.informativeText = "Your Spells, Conditions, or Rules library already contains content imported from Archive of Nethys. Wipe the relevant library from File → Wipe Data first if you want to re-import."
-            alert.alertStyle = .informational
-            alert.runModal()
-            return
-        }
+        let shouldImportConditionsAndActions = !hasImportedConditionsOrActions(context: context)
 
         guard confirmAoNImport(
             title: "Import Data from Archive of Nethys?",
-            message: "Downloads the current, ORC-licensed Pathfinder 2e spells, conditions, and actions/activities from 2e.aonprd.com and adds them to your libraries. Legacy (pre-remaster OGL) entries with no ORC equivalent are skipped. Anything already in your libraries, including your own entries, is not affected."
+            message: "Downloads the current, ORC-licensed Pathfinder 2e spells, conditions, and actions/activities from 2e.aonprd.com. Spells only ever add new entries, so this is safe to re-run later. Conditions and actions/activities are a one-time import, skipped here if already done. Legacy (pre-remaster OGL) entries with no ORC equivalent are skipped. Anything already in your libraries, including your own entries, is not affected."
         ) else { return }
+
+        let progress = ImportProgressWindow(message: "Importing from Archive of Nethys…")
 
         Task {
             do {
                 let spells = try await AoNSpellImportService.importSpells(context: context)
-                let conditions = try await AoNConditionImportService.importConditions(context: context)
-                let actions = try await AoNActionImportService.importActions(context: context)
+                var conditions: AoNImportResult?
+                var actions: AoNActionImportService.ImportCounts?
+                if shouldImportConditionsAndActions {
+                    conditions = try await AoNConditionImportService.importConditions(context: context)
+                    actions = try await AoNActionImportService.importActions(context: context)
+                }
                 await MainActor.run {
+                    progress.close()
                     let alert = NSAlert()
                     alert.messageText = "Import Complete"
-                    alert.informativeText = """
-                    Imported \(spells.imported) spells, \(conditions.imported) conditions, and \(actions.actions) actions and \(actions.activities) activities from Archive of Nethys.
-                    Skipped \(spells.skipped + conditions.skipped + actions.skipped) legacy (non-ORC) entries.
-                    """
+                    var lines = ["Added \(spells.added) new spells (\(spells.alreadyPresent) already in your library)."]
+                    if let conditions, let actions {
+                        lines.append("Imported \(conditions.imported) conditions, \(actions.actions) actions, and \(actions.activities) activities.")
+                    } else {
+                        lines.append("Conditions and actions/activities were already imported, so they were skipped.")
+                    }
+                    let skippedLegacy = spells.skippedLegacy + (conditions?.skipped ?? 0) + (actions?.skipped ?? 0)
+                    if skippedLegacy > 0 {
+                        lines.append("Skipped \(skippedLegacy) legacy (non-ORC) entries.")
+                    }
+                    alert.informativeText = lines.joined(separator: "\n")
                     alert.runModal()
                 }
             } catch {
                 await MainActor.run {
+                    progress.close()
                     presentError(error, title: "Import Failed")
                 }
             }
         }
     }
 
-    private static func hasImportedAoNData(context: ModelContext) -> Bool {
-        let spellCount = (try? context.fetchCount(FetchDescriptor<Spell>(predicate: #Predicate { $0.aonID != nil }))) ?? 0
+    private static func hasImportedConditionsOrActions(context: ModelContext) -> Bool {
         let conditionCount = (try? context.fetchCount(FetchDescriptor<Condition>(predicate: #Predicate { $0.aonID != nil }))) ?? 0
         let actionCount = (try? context.fetchCount(FetchDescriptor<RuleAction>(predicate: #Predicate { $0.aonID != nil }))) ?? 0
-        return spellCount > 0 || conditionCount > 0 || actionCount > 0
+        return conditionCount > 0 || actionCount > 0
     }
 
-    /// Shows the shared AoN import confirmation alert. Returns whether the user confirmed.
     private static func confirmAoNImport(title: String, message: String) -> Bool {
         let confirmation = NSAlert()
         confirmation.messageText = title
